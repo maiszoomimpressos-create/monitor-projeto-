@@ -11,7 +11,7 @@ Registro de decisões do projeto. Novas decisões: adicionar no fim, com data, q
 - O painel deve exibir a próxima execução real, coerente com o agendador.
 - Ainda a definir com o usuário: formato da escolha (presets ou valor livre), mínimos/máximos, se a execução manual reinicia a contagem.
 
-**Situação:** NÃO implementado. Cron diário `0 9 * * *` (06:00 BRT) por decisão do usuário (ficar no Vercel Hobby, 14/10/2026); painel e validação alinhados a mínimo de 1 dia.
+**Situação:** implementado na branch `feat/rotina-checagem` (ver D-006). Antes: cron diário `0 9 * * *` (06:00 BRT) por decisão do usuário (ficar no Vercel Hobby, 14/10/2026); painel e validação alinhados a mínimo de 1 dia.
 
 ## D-002 — Leitura leve via PostgREST com chave anon (herdada da implementação inicial)
 Checagem por `GET /rest/v1/_uptime_healthcheck?select=id&limit=1` usando a chave **anon**, em tabela dedicada com RLS só-leitura (`sql/supabase_healthcheck_migration.sql`). Nunca usar `service_role`.
@@ -26,3 +26,13 @@ Cadastro e histórico ficam em um Postgres próprio (previsto Neon via Vercel), 
 **Decisão:** substituir o login de administrador único (`ADMIN_PASSWORD`) por cadastro/login de usuários com e-mail e senha. Cada projeto pertence a um usuário (`ownerId`) e cada usuário só vê/edita/verifica os próprios projetos.
 **Detalhes:** senha com scrypt nativo do Node (sem dependência nova); sessão em cookie HMAC (`ADMIN_SESSION_SECRET`) com `uid`; rate limit simples em memória. O cron continua verificando todos os projetos ativos, de qualquer usuário.
 **Impacto:** exige aplicar a migration `20261014000000_users_ownership`; projetos antigos sem dono ficam invisíveis até atribuição manual.
+
+## D-006 — Agendador configurável e compatível com o plano (14/10/2026)
+**Contexto:** Vercel Hobby confirmado (cron só 1x/dia; deploy com `0 */6 * * *` recusado).
+**Decisão:**
+- Vercel Cron diário `0 9 * * *` (06:00 BRT) funciona em qualquer plano e é o padrão.
+- O período do agendador ativo é declarado em `SCHEDULER_TICK_MINUTES` (padrão 1440) e `SCHEDULER_TICK_OFFSET_MINUTES` (padrão 540). O painel só oferece intervalos ≥ esse período (presets de 5 min a 7 dias) e a API recusa os demais.
+- Para intervalos menores: agendador externo chamando a mesma rota com `Bearer CRON_SECRET` (workflow GitHub Actions a cada 15 min incluído, desligado por padrão; ou cron-job.org). No Pro, pode-se trocar o cron da Vercel para `*/15 * * * *`.
+- Projeto vence quando falta menos de meio período do agendador; "próxima execução" é o próximo disparo em que estará vencido.
+- Execução limitada a 45 s por chamada; projetos excedentes ficam para o próximo disparo.
+**Impacto:** sem mudança de banco (nenhuma migration nova).

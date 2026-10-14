@@ -1,6 +1,27 @@
 # HANDOFF.md
 
-_Última sessão: 14/10/2026 — Grok Bot (branch `feat/telas-auth`)._
+_Última sessão: 14/10/2026 — Grok Bot (branch `feat/rotina-checagem`)._
+
+## Sessão 4 — rotina de checagem (branch `feat/rotina-checagem`, PR para `main`)
+Feito:
+- `src/lib/schedule.ts` (lógica pura): config do agendador via env (`SCHEDULER_TICK_MINUTES`, padrão 1440; `SCHEDULER_TICK_OFFSET_MINUTES`, padrão 540 = 09:00 UTC), `isProjectDue` com tolerância de meio tick, `nextRunAt` = próximo disparo real, intervalos permitidos (≥ tick, até 7 dias).
+- Testes: `src/lib/schedule.test.ts`, `npm test` (node:test + tsx).
+- `sweep.ts`: todos os projetos ativos de todos os usuários, mais atrasados primeiro, lotes de 5, orçamento de 45 s (maxDuration 60 s); sobra fica para o próximo disparo (`deferred` na resposta).
+- Rota do cron: `Bearer CRON_SECRET` em tempo constante; falha na limpeza não derruba a resposta.
+- Painel: formulário novo e edição mostram só intervalos compatíveis + aviso do agendador; API recusa intervalo incompatível.
+- `.github/workflows/agendador-externo.yml`: chama a rotina a cada 15 min, **desligado** até configurar.
+- Comentário da migration `users_ownership` atualizado: aplicada no Neon de produção em 14/10/2026.
+
+Para ativar intervalos menores que 1 dia (opcional):
+1. GitHub > Settings > Secrets and variables > Actions: variable `ENABLE_EXTERNAL_SCHEDULER=true`; secrets `MONITOR_CRON_URL` (`https://<domínio>/api/cron/check-projects`) e `CRON_SECRET` (mesmo valor da Vercel).
+2. Vercel: `SCHEDULER_TICK_MINUTES=15`, `SCHEDULER_TICK_OFFSET_MINUTES=0` e redeploy.
+3. Alternativa: cron-job.org chamando a mesma URL com header `Authorization: Bearer <CRON_SECRET>`.
+
+Próximo passo:
+- Configurar `CRON_SECRET` na Vercel, fazer deploy e conferir no log a primeira execução (06:00–06:59 BRT) com projeto real.
+- Decidir se execução manual deve reiniciar a contagem do intervalo.
+- Listagem de projetos na página inicial (hoje só "Novo projeto").
+
 
 ## Sessão 3 — confirmação ao vivo do plano Vercel (14/10/2026 17:01 BRT)
 - PR #1 aberto em `feat/telas-auth` → deploy preview **falhou**.
@@ -10,7 +31,7 @@ _Última sessão: 14/10/2026 — Grok Bot (branch `feat/telas-auth`)._
 ## Sessão 2 — telas e multiusuário (branch `feat/telas-auth`, PR para `main`)
 Feito:
 - Landing `/`, login `/entrar`, cadastro `/cadastro` (`AuthForm.tsx`); `/admin/login` redireciona para `/entrar`.
-- Modelo `User` + `Project.ownerId` (opcional) e migration `prisma/migrations/20261014000000_users_ownership` (**só arquivo, não aplicada**).
+- Modelo `User` + `Project.ownerId` (opcional) e migration `prisma/migrations/20261014000000_users_ownership` (aplicada no Neon de produção em 14/10/2026).
 - Senha com scrypt nativo (`src/lib/password.ts`); sessão HMAC reaproveitada, agora com `uid` e nome (`src/lib/auth.ts`, cookie `session`).
 - Rate limit em memória (`src/lib/rateLimit.ts`).
 - Todas as rotas de projetos filtram por `ownerId` do usuário logado.
@@ -18,7 +39,7 @@ Feito:
 - lint, tsc e build passaram (ver `STATUS.md`).
 
 Não feito / pendente:
-- Aplicar a migration no banco de controle (autorização do usuário).
+- ~~Aplicar a migration~~ — aplicada no Neon de produção em 14/10/2026.
 - Atribuir dono a projetos antigos (se houver) — SQL manual: `UPDATE projects SET "ownerId" = '<id do usuário>' WHERE "ownerId" IS NULL;`.
 - Testar no navegador com banco real; listagem de projetos fora da página inicial ainda não decidida.
 - Agendamento continua sem correção (D-001).
