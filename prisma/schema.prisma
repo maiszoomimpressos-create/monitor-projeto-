@@ -1,0 +1,73 @@
+// Banco de controle (control-plane) do monitor de disponibilidade.
+// Este banco é separado dos projetos Supabase monitorados.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Conexão direta (sem pgbouncer) usada só pelo Prisma Migrate — necessária
+  // para advisory locks durante migrations em bancos com connection pooling (Neon).
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum CheckStatus {
+  SUCESSO
+  FALHA_CONEXAO
+  FALHA_AUTENTICACAO
+  FALHA_CONFIGURACAO
+  POSSIVEL_PAUSA
+  ERRO_DESCONHECIDO
+}
+
+model Project {
+  id                String   @id @default(cuid())
+  name              String
+  supabaseUrl       String
+  // Nome da tabela de verificação na API REST (PostgREST), ex: "_uptime_healthcheck"
+  healthcheckTable  String   @default("_uptime_healthcheck")
+
+  // Credencial (chave anon/restrita) criptografada em repouso (AES-256-GCM).
+  // A chave de criptografia (ENCRYPTION_KEY) NUNCA fica no banco.
+  encryptedKey      String
+  keyLastFour       String // últimos caracteres da chave, apenas para exibição/identificação
+
+  intervalMinutes   Int      @default(360) // 6 horas
+  enabled           Boolean  @default(true)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Controle de concorrência / agendamento
+  lastRunAt         DateTime?
+  lastSuccessAt     DateTime?
+  isRunning         Boolean  @default(false)
+  runningSince      DateTime?
+
+  // Consecutivas falhas de conexão, usado para inferir "possível pausa"
+  consecutiveConnFailures Int @default(0)
+
+  executions        Execution[]
+
+  @@map("projects")
+}
+
+model Execution {
+  id              String      @id @default(cuid())
+  projectId       String
+  project         Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  startedAt       DateTime    @default(now())
+  finishedAt      DateTime?
+  durationMs      Int?
+
+  status          CheckStatus
+  httpStatus      Int?
+  message         String?     // mensagem compreensível, sem dados sensíveis
+
+  triggeredBy     String      @default("cron") // "cron" | "manual"
+
+  @@index([projectId, startedAt])
+  @@map("executions")
+}
