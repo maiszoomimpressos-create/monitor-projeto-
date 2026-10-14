@@ -1,6 +1,28 @@
 # HANDOFF.md
 
-_Última sessão: 14/10/2026 — Grok Bot._
+_Última sessão: 14/10/2026 — Grok Bot (branch `feat/telas-auth`)._
+
+## Sessão 3 — confirmação ao vivo do plano Vercel (14/10/2026 17:01 BRT)
+- PR #1 aberto em `feat/telas-auth` → deploy preview **falhou**.
+- Evidência: comentário do `vercel[bot]` no PR: Hobby limitado a cron diário; `0 */6 * * *` recusado.
+- Impacto: sem Pro (ou cron diário / agendador externo), o agendamento atual não sobe na Vercel.
+
+## Sessão 2 — telas e multiusuário (branch `feat/telas-auth`, PR para `main`)
+Feito:
+- Landing `/`, login `/entrar`, cadastro `/cadastro` (`AuthForm.tsx`); `/admin/login` redireciona para `/entrar`.
+- Modelo `User` + `Project.ownerId` (opcional) e migration `prisma/migrations/20261014000000_users_ownership` (**só arquivo, não aplicada**).
+- Senha com scrypt nativo (`src/lib/password.ts`); sessão HMAC reaproveitada, agora com `uid` e nome (`src/lib/auth.ts`, cookie `session`).
+- Rate limit em memória (`src/lib/rateLimit.ts`).
+- Todas as rotas de projetos filtram por `ownerId` do usuário logado.
+- `/admin` agora mostra apenas barra flutuante + botão "Novo projeto" (→ `/admin/novo`). `Dashboard.tsx` não é mais usado pela página (mantido para reaproveitar a listagem depois).
+- lint, tsc e build passaram (ver `STATUS.md`).
+
+Não feito / pendente:
+- Aplicar a migration no banco de controle (autorização do usuário).
+- Atribuir dono a projetos antigos (se houver) — SQL manual: `UPDATE projects SET "ownerId" = '<id do usuário>' WHERE "ownerId" IS NULL;`.
+- Testar no navegador com banco real; listagem de projetos fora da página inicial ainda não decidida.
+- Agendamento continua sem correção (D-001).
+
 
 ## O que foi feito nesta sessão
 1. Apuração somente leitura do código (relatório fora do repo: `C:\Users\Free\Desktop\CONTINUIDADE-SUPABASE\apuracao-grok.md`).

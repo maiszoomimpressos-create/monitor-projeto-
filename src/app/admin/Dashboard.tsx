@@ -53,8 +53,8 @@ export default function Dashboard({ initialProjects }: { initialProjects: Projec
   }
 
   async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/entrar");
     router.refresh();
   }
 

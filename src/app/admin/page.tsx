@@ -1,14 +1,29 @@
-import { prisma } from "@/lib/db";
-import { serializeProject } from "@/lib/serialize";
-import Dashboard from "./Dashboard";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/requireAdmin";
+import FloatingNav from "./FloatingNav";
 
-// Painel administrativo: sempre busca dados atuais do banco de controle a cada
-// requisição (projetos, histórico), nunca deve ser pré-renderizado/estático.
+// Página inicial após o login: apenas a barra flutuante e o botão "Novo projeto".
+// (A listagem de projetos — Dashboard.tsx — fica disponível para uma etapa futura.)
 export const instant = false;
 
 export default async function AdminPage() {
-  const projects = await prisma.project.findMany({ orderBy: { createdAt: "asc" } });
-  const serialized = projects.map(serializeProject);
+  const session = await getSession();
+  if (!session) {
+    redirect("/entrar");
+  }
 
-  return <Dashboard initialProjects={serialized} />;
+  return (
+    <>
+      <FloatingNav userName={session.name} />
+      <main className="flex min-h-screen items-center justify-center p-8">
+        <Link
+          href="/admin/novo"
+          className="rounded-md bg-black px-6 py-3 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+        >
+          + Novo projeto
+        </Link>
+      </main>
+    </>
+  );
 }

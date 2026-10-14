@@ -1,13 +1,12 @@
 import { cookies } from "next/headers";
-import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
+import { readSessionToken, SESSION_COOKIE_NAME, type SessionPayload } from "@/lib/auth";
 
 /**
- * Checagem de defesa em profundidade dentro das rotas da API.
- * O middleware já bloqueia /admin e /api/admin/*, mas cada rota sensível
- * revalida a sessão para não depender só da configuração de roteamento.
+ * Retorna a sessão do usuário logado (ou null).
+ * O proxy já bloqueia /admin e /api/admin/*, mas cada rota sensível revalida
+ * a sessão e usa o `uid` para filtrar os dados do próprio usuário.
  */
-export async function requireAdminSession(): Promise<boolean> {
+export async function getSession(): Promise<SessionPayload | null> {
   const store = await cookies();
-  const token = store.get(SESSION_COOKIE_NAME)?.value;
-  return verifySessionToken(token);
+  return readSessionToken(store.get(SESSION_COOKIE_NAME)?.value);
 }

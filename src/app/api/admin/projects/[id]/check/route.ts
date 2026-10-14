@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/requireAdmin";
+import { getSession } from "@/lib/requireAdmin";
 import { runCheckForProject } from "@/lib/runCheck";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function POST(_request: NextRequest, { params }: RouteParams) {
-  if (!(await requireAdminSession())) {
+  const session = await getSession();
+  if (!session) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
   const { id } = await params;
 
-  const project = await prisma.project.findUnique({ where: { id } });
+  const project = await prisma.project.findFirst({ where: { id, ownerId: session.uid } });
   if (!project) {
     return NextResponse.json({ error: "Projeto não encontrado." }, { status: 404 });
   }
