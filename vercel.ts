@@ -16,6 +16,8 @@ import type { VercelConfig } from "@vercel/config/v1";
 //   (`docs/agendador-externo.github-actions.yml` (copiar para `.github/workflows/`)) e ajuste SCHEDULER_TICK_MINUTES.
 // - Se migrar para o Pro, pode trocar para "*/15 * * * *" e definir
 //   SCHEDULER_TICK_MINUTES=15 e SCHEDULER_TICK_OFFSET_MINUTES=0.
+// - Com o agendador próprio (D-007, docs/agendador-proprio.md) este cron vira
+//   reserva opcional; o lock impede checagem dupla. Para desligar, remova `crons`.
 export const config: VercelConfig = {
   framework: "nextjs",
   crons: [

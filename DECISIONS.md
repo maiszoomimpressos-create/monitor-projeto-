@@ -36,3 +36,8 @@ Cadastro e histórico ficam em um Postgres próprio (previsto Neon via Vercel), 
 - Projeto vence quando falta menos de meio período do agendador; "próxima execução" é o próximo disparo em que estará vencido.
 - Execução limitada a 45 s por chamada; projetos excedentes ficam para o próximo disparo.
 **Impacto:** sem mudança de banco (nenhuma migration nova).
+
+## D-007 — Agendador próprio independente da Vercel (14/10/2026, decisão do usuário)
+**Decisão:** as checagens passam a ser disparadas por um processo Node de longa duração (`src/worker`), hospedado no Railway/Fly.io ou em máquina própria (pm2). Ele consulta o banco de controle a cada `WORKER_TICK_SECONDS` (padrão 60 s) e reaproveita a lógica de `src/lib` (sweep, lock, isolamento, crypto, SSRF). A Vercel fica só com as telas/API.
+**Detalhes:** com o worker, `SCHEDULER_TICK_MINUTES=1` (worker e Vercel); intervalo mínimo oferecido ao cliente: **5 min** (evita carga desnecessária nos projetos monitorados e respeita a duração das checagens, até ~20 s). O cron diário da Vercel pode continuar como reserva: o lock compara `lastRunAt`, impedindo checagem dupla.
+**Impacto:** novo serviço a hospedar e manter (custo/plano do Railway ou máquina ligada); sem mudança de banco.

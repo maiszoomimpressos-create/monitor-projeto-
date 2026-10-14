@@ -27,7 +27,9 @@ export interface SchedulableProject {
 
 export const DEFAULT_TICK_MINUTES = DAY_MINUTES;
 export const DEFAULT_OFFSET_MINUTES = 9 * 60;
-export const MIN_TICK_MINUTES = 5;
+export const MIN_TICK_MINUTES = 1;
+// Menor intervalo oferecido ao cliente, mesmo com o worker rodando a cada 1 min.
+export const MIN_INTERVAL_MINUTES = 5;
 export const MAX_INTERVAL_MINUTES = 7 * DAY_MINUTES;
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
@@ -91,11 +93,11 @@ export function formatInterval(minutes: number): string {
 
 /** Intervalos que o cliente pode escolher: só os compatíveis com o agendador ativo. */
 export function allowedIntervals(config: ScheduleConfig): { minutes: number; label: string }[] {
-  return PRESETS.filter((m) => m >= config.tickMinutes).map((m) => ({ minutes: m, label: formatInterval(m) }));
+  return PRESETS.filter((m) => m >= Math.max(config.tickMinutes, MIN_INTERVAL_MINUTES)).map((m) => ({ minutes: m, label: formatInterval(m) }));
 }
 
 export function isIntervalAllowed(minutes: number, config: ScheduleConfig): boolean {
-  return Number.isInteger(minutes) && minutes >= config.tickMinutes && minutes <= MAX_INTERVAL_MINUTES;
+  return Number.isInteger(minutes) && minutes >= Math.max(config.tickMinutes, MIN_INTERVAL_MINUTES) && minutes <= MAX_INTERVAL_MINUTES;
 }
 
 /** Texto curto para o painel explicando o agendador ativo. */
@@ -104,6 +106,9 @@ export function schedulerNote(config: ScheduleConfig): string {
   const mm = String(config.offsetMinutes % 60).padStart(2, "0");
   if (config.tickMinutes === DAY_MINUTES) {
     return `A verificação automática roda 1 vez por dia, a partir de ${hh}:${mm} UTC (pode atrasar até 1 hora). Intervalos menores exigem um agendador externo.`;
+  }
+  if (config.tickMinutes === 1) {
+    return "A verificação automática roda a cada minuto (agendador próprio); o projeto é verificado em até ~1 min após vencer.";
   }
   return `A verificação automática roda ${formatInterval(config.tickMinutes).toLowerCase()} (pode atrasar alguns minutos).`;
 }

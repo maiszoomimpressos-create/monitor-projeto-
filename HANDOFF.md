@@ -1,6 +1,22 @@
 # HANDOFF.md
 
-_Última sessão: 14/10/2026 — Grok Bot (branch `feat/rotina-checagem`)._
+_Última sessão: 14/10/2026 — Grok Bot (branch `feat/agendador-proprio`)._
+
+## Sessão 5 — agendador próprio (branch `feat/agendador-proprio`, PR com base `feat/rotina-checagem`)
+Feito:
+- `src/worker/loop.ts` (laço testável) e `src/worker/index.ts` (entrada): `npm run worker` / `npm run worker:local` (lê `.env.local`).
+- Lock agendado agora exige `lastRunAt` igual ao lido → worker e cron da Vercel podem coexistir.
+- Com `SCHEDULER_TICK_MINUTES=1`, painel oferece intervalos a partir de 5 min (mínimo fixo `MIN_INTERVAL_MINUTES`).
+- `Dockerfile.worker`, `.dockerignore`, `railway.json`, `fly.toml`, `ecosystem.config.cjs` (pm2) e guia `docs/agendador-proprio.md`.
+- Limpeza do histórico no worker: no máximo 1x/hora.
+
+Próximo passo:
+1. Mesclar PR #2 e depois este PR.
+2. Implantar o worker (Railway recomendado) com `DATABASE_URL`, `ENCRYPTION_KEY` (mesma da Vercel), `SCHEDULER_TICK_MINUTES=1`, `SCHEDULER_TICK_OFFSET_MINUTES=0`.
+3. Na Vercel: `SCHEDULER_TICK_MINUTES=1` e `SCHEDULER_TICK_OFFSET_MINUTES=0` + redeploy (senão o painel continua só com intervalos diários).
+4. Conferir nos logs do worker a primeira checagem real e o histórico no painel.
+5. Decidir se mantém o cron da Vercel como reserva (ver `docs/agendador-proprio.md`).
+
 
 ## Sessão 4 — rotina de checagem (branch `feat/rotina-checagem`, PR para `main`)
 Feito:

@@ -26,12 +26,16 @@ export interface RunCheckResult {
  * Tenta adquirir o lock de execução de um projeto de forma atômica.
  * Retorna false se outra execução já estiver em andamento (e não estiver obsoleta).
  */
-async function tryAcquireLock(projectId: string): Promise<boolean> {
+async function tryAcquireLock(projectId: string, expectedLastRunAt?: Date | null): Promise<boolean> {
   const staleCutoff = new Date(Date.now() - STALE_LOCK_MS);
   const result = await prisma.project.updateMany({
     where: {
       id: projectId,
       OR: [{ isRunning: false }, { runningSince: { lt: staleCutoff } }],
+      // Checagem agendada: só pega o lock se ninguém executou desde a leitura.
+      // Evita checar 2x quando worker próprio e cron da Vercel coexistem
+      // (um termina e libera o lock antes de o outro tentar).
+      ...(expectedLastRunAt !== undefined ? { lastRunAt: expectedLastRunAt } : {}),
     },
     data: { isRunning: true, runningSince: new Date() },
   });
@@ -49,9 +53,9 @@ export async function runCheckForProject(
   project: Project,
   triggeredBy: TriggerSource
 ): Promise<RunCheckResult> {
-  const locked = await tryAcquireLock(project.id);
+  const locked = await tryAcquireLock(project.id, triggeredBy === "cron" ? project.lastRunAt : undefined);
   if (!locked) {
-    return { skipped: true, reason: "já existe uma verificação em andamento para este projeto" };
+    return { skipped: true, reason: "já existe uma verificação em andamento (ou recém-concluída) para este projeto" };
   }
 
   try {
