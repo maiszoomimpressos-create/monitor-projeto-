@@ -5,6 +5,7 @@ import { projectInputSchema } from "@/lib/validation";
 import { encryptSecret, lastFour } from "@/lib/crypto";
 import { assertHostResolvesToPublicIp, assertWellFormedSupabaseUrl, UnsafeUrlError } from "@/lib/ssrf";
 import { serializeProject } from "@/lib/serialize";
+import { formatInterval, getScheduleConfig, isIntervalAllowed } from "@/lib/schedule";
 
 export async function GET() {
   const session = await getSession();
@@ -27,6 +28,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos." }, { status: 400 });
   }
   const data = parsed.data;
+
+  const schedule = getScheduleConfig();
+  if (data.intervalMinutes !== undefined && !isIntervalAllowed(data.intervalMinutes, schedule)) {
+    return NextResponse.json(
+      { error: `Intervalo incompatível com o agendador ativo (mínimo ${formatInterval(schedule.tickMinutes).toLowerCase()}).` },
+      { status: 400 },
+    );
+  }
 
   try {
     const url = assertWellFormedSupabaseUrl(data.supabaseUrl);

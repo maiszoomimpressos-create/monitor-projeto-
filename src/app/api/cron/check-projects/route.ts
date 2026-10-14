@@ -1,14 +1,19 @@
+import { timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { sweepDueProjects } from "@/lib/sweep";
 import { cleanupHistory } from "@/lib/cleanup";
 
+// Rotina periódica: chamada pelo Vercel Cron (GET, diário no Hobby) e, opcionalmente,
+// por um agendador externo (GitHub Actions / cron-job.org) com o mesmo CRON_SECRET.
 export const maxDuration = 60;
+const SWEEP_BUDGET_MS = 45_000; // deixa folga para limpeza e resposta
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
-  const header = request.headers.get("authorization");
-  return header === `Bearer ${secret}`;
+  const received = Buffer.from(request.headers.get("authorization") ?? "");
+  const expected = Buffer.from(`Bearer ${secret}`);
+  return received.length === expected.length && timingSafeEqual(received, expected);
 }
 
 async function handle(request: NextRequest) {
@@ -16,18 +21,20 @@ async function handle(request: NextRequest) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
-  const summary = await sweepDueProjects();
-  await cleanupHistory();
+  const summary = await sweepDueProjects(SWEEP_BUDGET_MS);
+  try {
+    await cleanupHistory();
+  } catch (error) {
+    console.error("Falha na limpeza do histórico:", error);
+  }
 
   return NextResponse.json({ ok: true, ...summary });
 }
 
-// O agendador do Vercel (Cron Jobs) chama via GET.
 export async function GET(request: NextRequest) {
   return handle(request);
 }
 
-// Mantido para permitir disparo manual autenticado via POST (ex.: curl/CI).
 export async function POST(request: NextRequest) {
   return handle(request);
 }

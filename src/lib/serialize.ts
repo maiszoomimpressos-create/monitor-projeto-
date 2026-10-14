@@ -1,5 +1,5 @@
 import { Project } from "@prisma/client";
-import { nextRunAt } from "@/lib/runCheck";
+import { getScheduleConfig, nextRunAt } from "@/lib/schedule";
 
 /**
  * Remove a credencial criptografada antes de qualquer resposta ao navegador.
@@ -11,6 +11,6 @@ export function serializeProject(project: Project) {
   return {
     ...rest,
     maskedKey: `••••••••${project.keyLastFour}`,
-    nextRunAt: nextRunAt(project),
+    nextRunAt: nextRunAt(project, new Date(), getScheduleConfig()),
   };
 }

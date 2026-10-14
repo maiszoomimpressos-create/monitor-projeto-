@@ -1,6 +1,5 @@
 -- Multiusuário: tabela de usuários e dono (ownerId) em projects.
--- NÃO aplicada em nenhum banco. Aplicar manualmente com `npm run db:migrate:deploy`
--- somente com autorização do usuário.
+-- APLICADA no banco de controle de produção (Neon) em 14/10/2026.
 
 CREATE TABLE "users" (
   "id" TEXT NOT NULL,

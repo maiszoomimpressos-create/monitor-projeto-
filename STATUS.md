@@ -1,6 +1,6 @@
 # STATUS.md
 
-_Última atualização: 14/10/2026 17:01 BRT (Vercel Hobby confirmado via falha de deploy do PR #1)._
+_Última atualização: 14/10/2026 ~18:30 BRT (branch `feat/rotina-checagem`: rotina de checagem configurável por projeto)._
 Relatório completo da apuração: `C:\Users\Free\Desktop\CONTINUIDADE-SUPABASE\apuracao-grok.md` (fora do repositório).
 
 Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠 parcial · ❌ ausente/não confirmado
@@ -11,7 +11,10 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 | Cadastro / edição / ativação / exclusão de projetos | 🟡 | `src/app/admin/novo/page.tsx`, `src/app/admin/projetos/[id]/ProjectDetail.tsx`, `src/app/api/admin/projects/**` |
 | Consulta real: `GET /rest/v1/{tabela}?select=id&limit=1`, headers `apikey` + `Bearer`, timeout 8 s, até 2 tentativas (só conexão/5xx/desconhecido) | 🟡 | `src/lib/check.ts` |
 | "Possível pausa" após 3 falhas de conexão consecutivas | 🟡 | `src/lib/runCheck.ts` |
-| Agendamento (Vercel Cron diário `0 9 * * *` = 06:00 BRT → `/api/cron/check-projects`, `Bearer CRON_SECRET`) | 🟠 inconsistências abaixo | `vercel.ts`, `src/app/api/cron/check-projects/route.ts` |
+| Agendamento: Vercel Cron diário `0 9 * * *` (Hobby) → `/api/cron/check-projects` (`Bearer CRON_SECRET`, comparação em tempo constante); agendador externo opcional (GitHub Actions a cada 15 min, desligado por padrão) | 🟡 testes unitários da lógica; sem execução real | `vercel.ts`, `docs/agendador-externo.github-actions.yml` (copiar para `.github/workflows/`), `src/app/api/cron/check-projects/route.ts` |
+| Intervalo por projeto escolhido pelo cliente (D-001), painel só oferece intervalos ≥ período do agendador ativo (`SCHEDULER_TICK_MINUTES`); API recusa incompatíveis; "próxima execução" = próximo disparo real do agendador | 🟡 testado (unitário) | `src/lib/schedule.ts`, `src/app/admin/novo/**`, `ProjectDetail.tsx` |
+| `isProjectDue` com tolerância de meio período do agendador | ✅ testes unitários | `src/lib/schedule.ts`, `src/lib/schedule.test.ts` |
+| Rotina respeita tempo da função (orçamento 45 s de 60 s; vencidos que não couberem ficam para o próximo disparo, mais atrasados primeiro) | 🟡 | `src/lib/sweep.ts` |
 | Lock por projeto (update atômico, expira em 10 min) | 🟡 | `src/lib/runCheck.ts` |
 | Isolamento de falhas (lotes de 5, `Promise.allSettled`) | 🟡 | `src/lib/sweep.ts` |
 | Histórico + limpeza (30 dias / 200 por projeto) | 🟡 (UI mostra 50) | `src/lib/cleanup.ts`, `projetos/[id]/page.tsx` |
@@ -22,33 +25,35 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 | Página pós-login: só barra flutuante (nome + Sair) e botão "Novo projeto" | 🟡 | `src/app/admin/page.tsx`, `src/app/admin/FloatingNav.tsx` |
 | Criptografia AES-256-GCM das chaves | 🟡 | `src/lib/crypto.ts` |
 | Proteção SSRF (https, `*.supabase.co/.in/.net`, DNS sem IP privado) | 🟠 (fetch segue redirects; faixas IPv6 incompletas) | `src/lib/ssrf.ts` |
-| Testes automatizados | ❌ não existem | — |
+| Testes automatizados | 🟠 só `src/lib/schedule.test.ts` (8 testes, `npm test`, node:test + tsx) | `src/lib/schedule.test.ts` |
 
 ## Validações com evidência
+- Branch `feat/rotina-checagem` (14/10/2026, box, variáveis fictícias, sem banco): `npm run lint` → exit 0; `npx tsc --noEmit --incremental false` → exit 0; `npm test` → 8 passaram, 0 falharam; `npm run build` → exit 0.
 - Branch `feat/telas-auth` (14/10/2026, no box do Grok Bot, `npm ci` + variáveis fictícias, sem banco): `npm run lint` → exit 0; `npx tsc --noEmit --incremental false` → exit 0 (após o build gerar os tipos de rota; antes do build falha com `LayoutProps` não encontrado, pois esses tipos são gerados pelo Next); `npm run build` → exit 0; `prisma validate` → válido.
 - `eslint .` → exit 0, sem avisos (14/10/2026, apuração).
 - `tsc --noEmit --incremental false` → exit 0 (14/10/2026, apuração).
 - **Build: NÃO confirmado.** Há `.next/BUILD_ID` de 13/10/2026 10:02 (indício, não prova).
 - **Sem testes automatizados.** Os testes descritos no README foram manuais/temporários e não estão no repositório.
 
-## Inconsistências conhecidas do agendamento (NÃO corrigidas)
-1. ✅ Corrigido: cron diário; painel oferece 1 dia (padrão), 2 dias, 7 dias; Zod exige mínimo de 1 dia. "Próxima execução prevista" ainda é `lastRunAt + intervalo`, não o próximo disparo real (06:00 BRT). Default do `schema.prisma` (360) não alterado para evitar migration.
-2. ✅ Corrigido: `isProjectDue` tem tolerância de 30 min.
-3. Plano da Vercel: **Hobby confirmado** (deploy do PR #1 recusado; cron >1x/dia bloqueado).
-4. Execução manual atualiza `lastRunAt` e adia a próxima automática.
-5. `maxDuration = 60 s` pode estourar com ~15+ projetos vencidos ao mesmo tempo.
+## Agendamento — situação
+1. ✅ Plano Vercel **Hobby confirmado** (comentário do `vercel[bot]` no PR #1: cron limitado a 1x/dia). Cron mantido em `0 9 * * *` (06:00 BRT, pode disparar até 06:59).
+2. ✅ Frequência efetiva padrão: 1x/dia → intervalos oferecidos: 1, 2, 3 e 7 dias.
+3. Opcional: agendador externo a cada 15 min (GitHub Actions) → intervalos a partir de 15 min, se configurado (ver HANDOFF).
+4. Execução manual atualiza `lastRunAt` e adia a próxima automática (comportamento mantido; decidir com o usuário).
+5. Default do `schema.prisma` (`intervalMinutes` = 360) não alterado para evitar migration; a API sempre envia o intervalo escolhido.
 
 ## Bancos e configurações externas — NÃO confirmados
-- **Migration `20261014000000_users_ownership` NÃO aplicada** em nenhum banco. Precisa de `npm run db:migrate:deploy` (com autorização) antes de usar login/cadastro. Projetos já existentes ficam com `ownerId` nulo e invisíveis até serem atribuídos a um usuário.
+- **Migration `20261014000000_users_ownership` APLICADA no Neon de produção em 14/10/2026** (informado pelo usuário). Projetos antigos sem `ownerId` ficam invisíveis até atribuição.
 - `ADMIN_PASSWORD` não é mais usada; `ADMIN_SESSION_SECRET` continua obrigatória.
 - **Banco de controle (Neon):** `.env.local` local contém nomes de variáveis de Postgres/Neon preenchidas, mas **não foi verificado** se o banco existe, está acessível ou se a migration foi aplicada.
 - **Projetos Supabase monitorados:** **não confirmado** que o SQL `sql/supabase_healthcheck_migration.sql` foi aplicado em algum projeto.
-- **Variáveis na Vercel:** não verificadas (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `CRON_SECRET`, `ADMIN_SESSION_SECRET`, `ENCRYPTION_KEY`).
+- **Variáveis na Vercel:** não verificadas (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `CRON_SECRET`, `ADMIN_SESSION_SECRET`, `ENCRYPTION_KEY`; opcionais `SCHEDULER_TICK_MINUTES`, `SCHEDULER_TICK_OFFSET_MINUTES`).
 - **Deploy:** falhou no preview do PR #1 (14/10/2026 16:48 BRT). Comentário do Vercel no PR: conta Hobby só permite cron 1x/dia; a expressão `0 */6 * * *` é recusada. Projeto Vercel: `supabase-uptime-monitor` (neomars-projects-53c01d55). Plano Hobby **confirmado** por essa falha.
 
 ## Git
 - `main` no GitHub (`maiszoomimpressos-create/monitor-projeto-`) com commit inicial + docs.
-- Branch `feat/telas-auth` com PR aberto para `main` (não mesclado).
+- PR #1 (`feat/telas-auth`) mesclado em `main` (9c2ce7a).
+- Branch `feat/rotina-checagem` com PR aberto para `main` (não mesclado).
 
 ## Bloqueios
-- Definir como o cliente escolhe a frequência (D-001) e confirmar plano de hospedagem antes de corrigir o agendamento.
+- Nenhum bloqueio de código. Falta configuração externa (CRON_SECRET na Vercel; agendador externo se quiser < 1 dia) e teste ponta a ponta.
