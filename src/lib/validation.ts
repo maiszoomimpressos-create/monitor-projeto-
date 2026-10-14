@@ -29,3 +29,17 @@ export const projectUpdateSchema = projectInputSchema.partial().extend({
 });
 
 export type ProjectInput = z.infer<typeof projectInputSchema>;
+
+export const registerSchema = z.object({
+  name: z.string().trim().min(2, "Informe seu nome.").max(80, "Nome muito longo."),
+  email: z.string().trim().toLowerCase().pipe(z.email("E-mail inválido.")).pipe(z.string().max(254)),
+  password: z
+    .string()
+    .min(8, "A senha deve ter pelo menos 8 caracteres.")
+    .max(200, "Senha muito longa."),
+});
+
+export const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().min(1, "Informe o e-mail.").max(254),
+  password: z.string().min(1, "Informe a senha.").max(200),
+});

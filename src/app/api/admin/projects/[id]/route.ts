@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/requireAdmin";
+import { getSession } from "@/lib/requireAdmin";
 import { projectUpdateSchema } from "@/lib/validation";
 import { encryptSecret, lastFour } from "@/lib/crypto";
 import { assertHostResolvesToPublicIp, assertWellFormedSupabaseUrl, UnsafeUrlError } from "@/lib/ssrf";
@@ -9,12 +9,13 @@ import { serializeProject } from "@/lib/serialize";
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  if (!(await requireAdminSession())) {
+  const session = await getSession();
+  if (!session) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
   const { id } = await params;
 
-  const existing = await prisma.project.findUnique({ where: { id } });
+  const existing = await prisma.project.findFirst({ where: { id, ownerId: session.uid } });
   if (!existing) {
     return NextResponse.json({ error: "Projeto não encontrado." }, { status: 404 });
   }
@@ -57,12 +58,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
-  if (!(await requireAdminSession())) {
+  const session = await getSession();
+  if (!session) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
   const { id } = await params;
 
-  const existing = await prisma.project.findUnique({ where: { id } });
+  const existing = await prisma.project.findFirst({ where: { id, ownerId: session.uid } });
   if (!existing) {
     return NextResponse.json({ error: "Projeto não encontrado." }, { status: 404 });
   }

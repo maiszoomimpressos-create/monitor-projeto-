@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/requireAdmin";
+import { getSession } from "@/lib/requireAdmin";
 import { projectInputSchema } from "@/lib/validation";
 import { encryptSecret, lastFour } from "@/lib/crypto";
 import { assertHostResolvesToPublicIp, assertWellFormedSupabaseUrl, UnsafeUrlError } from "@/lib/ssrf";
 import { serializeProject } from "@/lib/serialize";
 
 export async function GET() {
-  if (!(await requireAdminSession())) {
+  const session = await getSession();
+  if (!session) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
-  const projects = await prisma.project.findMany({ orderBy: { createdAt: "asc" } });
+  const projects = await prisma.project.findMany({ where: { ownerId: session.uid }, orderBy: { createdAt: "asc" } });
   return NextResponse.json(projects.map(serializeProject));
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await requireAdminSession())) {
+  const session = await getSession();
+  if (!session) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
@@ -38,6 +40,7 @@ export async function POST(request: NextRequest) {
 
   const project = await prisma.project.create({
     data: {
+      ownerId: session.uid,
       name: data.name,
       supabaseUrl: data.supabaseUrl,
       healthcheckTable: data.healthcheckTable,
