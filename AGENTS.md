@@ -1,32 +1,42 @@
-## Monitor de Disponibilidade Supabase - Handoff para IAs
+# AGENTS.md — Monitor de Disponibilidade Supabase (handoff para IAs)
 
-**Antes de trabalhar:** Leia STATUS.md, HANDOFF.md e DECISIONS.md.
+**Antes de trabalhar, leia nesta ordem:** `STATUS.md` → `HANDOFF.md` → `DECISIONS.md`.
 
-### Objetivo do sistema
-Sistema para consultar periodicamente projetos Supabase via leitura real no banco (API REST/PostgREST), com agendamento no servidor e painel de acompanhamento.
+## Objetivo do sistema
+Consultar periodicamente vários projetos Supabase com leituras leves e reais no banco (API REST/PostgREST), com agendamento no servidor e painel administrativo. **A frequência/quantidade de acessos a cada projeto monitorado é definida pelo cliente** (ver `DECISIONS.md`, D-001).
 
-### Estrutura essencial
+## Stack (conferida no código em 14/10/2026)
+Next.js 16.4 (App Router, `src/proxy.ts`) · React 19.3 · Prisma 6.19 + PostgreSQL (banco de controle, previsto Neon) · Zod 4 · Tailwind 4 · Vercel + Vercel Cron Jobs (`vercel.ts`).
+
+## Estrutura essencial
 ```
 D:\PROJETOS ON LINE\SIMULAÇAO HUMANO\
- prisma/schema.prisma              # Modelo do banco de controle
- vercel.ts                         # Configuração Vercel + Cron
- src/lib/                          # Lógica de negócio
- src/app/admin/                    # Painel administrativo (App Router)
- src/app/api/                      # Endpoints (cron + admin)
- sql/supabase_healthcheck_migration.sql  # Migration para projetos monitorados
+  vercel.ts                               config Vercel + cron (fonte de verdade do agendamento)
+  prisma/schema.prisma                    modelo do banco de controle
+  prisma/migrations/20261013000000_init/  migration do banco de controle (escrita à mão, não aplicada/confirmada)
+  sql/supabase_healthcheck_migration.sql  SQL para cada projeto Supabase monitorado
+  src/lib/                                lógica (check, runCheck, sweep, ssrf, crypto, auth, cleanup)
+  src/app/admin/                          painel
+  src/app/api/                            rotas admin + /api/cron/check-projects
+  .env.example                            nomes de variáveis (valores fictícios)
 ```
 
-### Comandos de desenvolvimento
+## Comandos
 ```bash
-npm run dev              # Desenvolvimento local
-npm run build            # Build para produção
-npm run lint             # Lint
-npm run db:migrate:deploy  # Aplicar migrations
+npm run dev                 # desenvolvimento local
+npm run lint                # eslint (aprovado em 14/10/2026)
+npx tsc --noEmit            # tipos (aprovado em 14/10/2026)
+npm run build               # build (NÃO confirmado)
+npm run db:migrate:deploy   # aplica migrations — só com autorização explícita do usuário
 ```
+Não existe script de testes.
 
-### Regra para qualquer IA
-1. Ler STATUS.md e HANDOFF.md antes de trabalhar
-2. Trabalhar em etapas pequenas
-3. Atualizar STATUS.md e HANDOFF.md ao concluir etapas ou encontrar bloqueios
-4. Nunca registrar segredos
-5. Não descartar alterações existentes
+## Regras para qualquer IA
+1. Ler `STATUS.md`, `HANDOFF.md` e `DECISIONS.md` antes de trabalhar.
+2. Trabalhar em etapas pequenas e commits pequenos.
+3. **Ao concluir cada etapa (ou encontrar bloqueio), atualizar `STATUS.md` e `HANDOFF.md`** e, se houver decisão nova, `DECISIONS.md`.
+4. Nunca registrar segredos (nem em docs, nem em commits). Citar só nomes de variáveis.
+5. Não descartar alterações existentes; não usar `git reset --hard`/force-push sem autorização.
+6. Deploy, migrations, acesso a bancos reais e push só com autorização explícita do usuário.
+7. Não declarar build/lint/testes aprovados sem evidência (comando + data + resultado).
+8. Não presumir que bancos (Neon ou Supabase monitorados) estão configurados só porque o código os referencia.
