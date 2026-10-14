@@ -1,6 +1,6 @@
 # STATUS.md
 
-_Última atualização: 14/10/2026 (branch `feat/telas-auth`: telas + multiusuário)._
+_Última atualização: 14/10/2026 17:01 BRT (Vercel Hobby confirmado via falha de deploy do PR #1)._
 Relatório completo da apuração: `C:\Users\Free\Desktop\CONTINUIDADE-SUPABASE\apuracao-grok.md` (fora do repositório).
 
 Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠 parcial · ❌ ausente/não confirmado
@@ -11,7 +11,7 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 | Cadastro / edição / ativação / exclusão de projetos | 🟡 | `src/app/admin/novo/page.tsx`, `src/app/admin/projetos/[id]/ProjectDetail.tsx`, `src/app/api/admin/projects/**` |
 | Consulta real: `GET /rest/v1/{tabela}?select=id&limit=1`, headers `apikey` + `Bearer`, timeout 8 s, até 2 tentativas (só conexão/5xx/desconhecido) | 🟡 | `src/lib/check.ts` |
 | "Possível pausa" após 3 falhas de conexão consecutivas | 🟡 | `src/lib/runCheck.ts` |
-| Agendamento (Vercel Cron `0 */6 * * *` → `/api/cron/check-projects`, `Bearer CRON_SECRET`) | 🟠 inconsistências abaixo | `vercel.ts`, `src/app/api/cron/check-projects/route.ts` |
+| Agendamento (Vercel Cron diário `0 9 * * *` = 06:00 BRT → `/api/cron/check-projects`, `Bearer CRON_SECRET`) | 🟠 inconsistências abaixo | `vercel.ts`, `src/app/api/cron/check-projects/route.ts` |
 | Lock por projeto (update atômico, expira em 10 min) | 🟡 | `src/lib/runCheck.ts` |
 | Isolamento de falhas (lotes de 5, `Promise.allSettled`) | 🟡 | `src/lib/sweep.ts` |
 | Histórico + limpeza (30 dias / 200 por projeto) | 🟡 (UI mostra 50) | `src/lib/cleanup.ts`, `projetos/[id]/page.tsx` |
@@ -32,9 +32,9 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 - **Sem testes automatizados.** Os testes descritos no README foram manuais/temporários e não estão no repositório.
 
 ## Inconsistências conhecidas do agendamento (NÃO corrigidas)
-1. Cron a cada 6 h, mas o painel oferece "a cada 1 hora" (`novo/page.tsx`) e o Zod aceita mínimo de 5 min (`validation.ts`) → frequências menores que 6 h nunca ocorrem; "próxima execução prevista" fica errada.
-2. `isProjectDue` (`runCheck.ts`) não tem tolerância: com intervalo = período do cron, a diferença de segundos pode fazer o projeto rodar só a cada 12 h.
-3. Plano da Vercel não confirmado: no Hobby, cron é limitado a 1 execução/dia.
+1. ✅ Corrigido: cron diário; painel oferece 1 dia (padrão), 2 dias, 7 dias; Zod exige mínimo de 1 dia. "Próxima execução prevista" ainda é `lastRunAt + intervalo`, não o próximo disparo real (06:00 BRT). Default do `schema.prisma` (360) não alterado para evitar migration.
+2. ✅ Corrigido: `isProjectDue` tem tolerância de 30 min.
+3. Plano da Vercel: **Hobby confirmado** (deploy do PR #1 recusado; cron >1x/dia bloqueado).
 4. Execução manual atualiza `lastRunAt` e adia a próxima automática.
 5. `maxDuration = 60 s` pode estourar com ~15+ projetos vencidos ao mesmo tempo.
 
@@ -44,7 +44,7 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 - **Banco de controle (Neon):** `.env.local` local contém nomes de variáveis de Postgres/Neon preenchidas, mas **não foi verificado** se o banco existe, está acessível ou se a migration foi aplicada.
 - **Projetos Supabase monitorados:** **não confirmado** que o SQL `sql/supabase_healthcheck_migration.sql` foi aplicado em algum projeto.
 - **Variáveis na Vercel:** não verificadas (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `CRON_SECRET`, `ADMIN_SESSION_SECRET`, `ENCRYPTION_KEY`).
-- **Deploy:** nunca realizado. Projeto local vinculado à Vercel (`.vercel/`, ignorado no Git).
+- **Deploy:** falhou no preview do PR #1 (14/10/2026 16:48 BRT). Comentário do Vercel no PR: conta Hobby só permite cron 1x/dia; a expressão `0 */6 * * *` é recusada. Projeto Vercel: `supabase-uptime-monitor` (neomars-projects-53c01d55). Plano Hobby **confirmado** por essa falha.
 
 ## Git
 - `main` no GitHub (`maiszoomimpressos-create/monitor-projeto-`) com commit inicial + docs.

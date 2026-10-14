@@ -211,7 +211,8 @@ export default function ProjectDetail({
               <label className="mb-1 block text-sm font-medium">Intervalo (minutos)</label>
               <input
                 type="number"
-                min={5}
+                min={1440}
+                step={1440}
                 value={form.intervalMinutes}
                 onChange={(e) => setForm((f) => ({ ...f, intervalMinutes: Number(e.target.value) }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"

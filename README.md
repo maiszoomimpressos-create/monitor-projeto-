@@ -59,8 +59,8 @@ banco de controle deste painel):
 - Idempotente (pode rodar de novo sem duplicar a linha ou as policies).
 
 ### 4. Agendamento (`vercel.ts` + `src/app/api/cron/check-projects/route.ts`)
-- Vercel Cron Jobs chama `/api/cron/check-projects` a cada 6 horas por
-  padrão (`0 */6 * * *`).
+- Vercel Cron Jobs chama `/api/cron/check-projects` uma vez por dia, às
+  09:00 UTC / 06:00 BRT (`0 9 * * *`), limite do plano Hobby.
 - O endpoint exige `Authorization: Bearer <CRON_SECRET>` — sem o segredo
   correto, responde 401. Se a variável `CRON_SECRET` estiver configurada no
   projeto Vercel, a própria plataforma já envia esse header automaticamente
@@ -122,10 +122,9 @@ credenciais reais. Para colocar em funcionamento:
 3. **Variáveis de ambiente** (veja `.env.example`): `DATABASE_URL`,
    `CRON_SECRET`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `ENCRYPTION_KEY`.
    Configure-as no projeto Vercel (`vercel env add ...` ou pelo dashboard).
-4. **Plano do Vercel para o cron**: o agendamento padrão (`0 */6 * * *`, a
-   cada 6h) exige o **plano Pro** — no plano Hobby, o Vercel limita Cron Jobs
-   a 1 execução por dia. Se for ficar no Hobby, troque o `schedule` em
-   `vercel.ts` para algo como `"0 6 * * *"` (uma vez ao dia).
+4. **Plano do Vercel para o cron**: o projeto usa o plano Hobby, que limita
+   Cron Jobs a 1 execução por dia; por isso o `schedule` em `vercel.ts` é
+   `"0 9 * * *"` (06:00 BRT). Frequências maiores exigem o plano Pro.
 5. **Deploy**: `vercel deploy --prod` (não executado por mim nesta etapa).
 
 ## Variáveis de ambiente

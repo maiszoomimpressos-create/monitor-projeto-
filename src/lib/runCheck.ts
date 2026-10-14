@@ -137,10 +137,15 @@ export async function runCheckForProject(
   }
 }
 
+// Tolerância para pequenas variações no horário do cron diário: sem ela, um
+// projeto com intervalo de 1 dia poderia "não estar vencido" por segundos e
+// ficar para a execução seguinte (2 dias).
+const DUE_TOLERANCE_MS = 30 * 60 * 1000;
+
 export function isProjectDue(project: Project, now: Date = new Date()): boolean {
   if (!project.enabled) return false;
   if (!project.lastRunAt) return true;
-  const dueAt = new Date(project.lastRunAt.getTime() + project.intervalMinutes * 60 * 1000);
+  const dueAt = new Date(project.lastRunAt.getTime() + project.intervalMinutes * 60 * 1000 - DUE_TOLERANCE_MS);
   return now >= dueAt;
 }
 

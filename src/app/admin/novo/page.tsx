@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const INTERVAL_PRESETS = [
-  { label: "A cada 1 hora", minutes: 60 },
-  { label: "A cada 6 horas (padrão)", minutes: 360 },
-  { label: "A cada 12 horas", minutes: 720 },
-  { label: "A cada 24 horas", minutes: 1440 },
+  { label: "Uma vez por dia (padrão)", minutes: 1440 },
+  { label: "A cada 2 dias", minutes: 2880 },
+  { label: "A cada 7 dias", minutes: 10080 },
 ];
 
 export default function NewProjectPage() {
@@ -18,7 +17,7 @@ export default function NewProjectPage() {
     supabaseUrl: "",
     apiKey: "",
     healthcheckTable: "_uptime_healthcheck",
-    intervalMinutes: 360,
+    intervalMinutes: 1440,
     enabled: true,
   });
   const [error, setError] = useState<string | null>(null);

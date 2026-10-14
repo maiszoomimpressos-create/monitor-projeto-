@@ -2,6 +2,11 @@
 
 _Última sessão: 14/10/2026 — Grok Bot (branch `feat/telas-auth`)._
 
+## Sessão 3 — confirmação ao vivo do plano Vercel (14/10/2026 17:01 BRT)
+- PR #1 aberto em `feat/telas-auth` → deploy preview **falhou**.
+- Evidência: comentário do `vercel[bot]` no PR: Hobby limitado a cron diário; `0 */6 * * *` recusado.
+- Impacto: sem Pro (ou cron diário / agendador externo), o agendamento atual não sobe na Vercel.
+
 ## Sessão 2 — telas e multiusuário (branch `feat/telas-auth`, PR para `main`)
 Feito:
 - Landing `/`, login `/entrar`, cadastro `/cadastro` (`AuthForm.tsx`); `/admin/login` redireciona para `/entrar`.

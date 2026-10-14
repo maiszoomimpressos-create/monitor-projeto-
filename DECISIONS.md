@@ -11,7 +11,7 @@ Registro de decisões do projeto. Novas decisões: adicionar no fim, com data, q
 - O painel deve exibir a próxima execução real, coerente com o agendador.
 - Ainda a definir com o usuário: formato da escolha (presets ou valor livre), mínimos/máximos, se a execução manual reinicia a contagem.
 
-**Situação:** NÃO implementado. Hoje o cron é fixo em 6 h (`vercel.ts`) e o painel oferece 1 h / aceita 5 min (ver `STATUS.md`).
+**Situação:** NÃO implementado. Cron diário `0 9 * * *` (06:00 BRT) por decisão do usuário (ficar no Vercel Hobby, 14/10/2026); painel e validação alinhados a mínimo de 1 dia.
 
 ## D-002 — Leitura leve via PostgREST com chave anon (herdada da implementação inicial)
 Checagem por `GET /rest/v1/_uptime_healthcheck?select=id&limit=1` usando a chave **anon**, em tabela dedicada com RLS só-leitura (`sql/supabase_healthcheck_migration.sql`). Nunca usar `service_role`.
