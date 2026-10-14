@@ -21,3 +21,8 @@ Cadastro e histórico ficam em um Postgres próprio (previsto Neon via Vercel), 
 
 ## D-004 — Segredos fora do Git (14/10/2026)
 `.env*` (exceto `.env.example`), `.vercel/`, `.next/`, `node_modules/`, logs e arquivos de credenciais são ignorados. `.env.example` contém só nomes e valores fictícios.
+
+## D-005 — Multiusuário com cadastro aberto (14/10/2026, pedido do usuário)
+**Decisão:** substituir o login de administrador único (`ADMIN_PASSWORD`) por cadastro/login de usuários com e-mail e senha. Cada projeto pertence a um usuário (`ownerId`) e cada usuário só vê/edita/verifica os próprios projetos.
+**Detalhes:** senha com scrypt nativo do Node (sem dependência nova); sessão em cookie HMAC (`ADMIN_SESSION_SECRET`) com `uid`; rate limit simples em memória. O cron continua verificando todos os projetos ativos, de qualquer usuário.
+**Impacto:** exige aplicar a migration `20261014000000_users_ownership`; projetos antigos sem dono ficam invisíveis até atribuição manual.
