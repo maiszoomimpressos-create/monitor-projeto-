@@ -13,7 +13,7 @@ import type { VercelConfig } from "@vercel/config/v1";
 // - O intervalo de cada projeto é escolhido pelo cliente no painel (D-001), limitado
 //   a múltiplos compatíveis com o agendador ativo (SCHEDULER_TICK_MINUTES, padrão
 //   1440). Para intervalos menores use o agendador externo
-//   (.github/workflows/agendador-externo.yml) e ajuste SCHEDULER_TICK_MINUTES.
+//   (`docs/agendador-externo.github-actions.yml` (copiar para `.github/workflows/`)) e ajuste SCHEDULER_TICK_MINUTES.
 // - Se migrar para o Pro, pode trocar para "*/15 * * * *" e definir
 //   SCHEDULER_TICK_MINUTES=15 e SCHEDULER_TICK_OFFSET_MINUTES=0.
 export const config: VercelConfig = {

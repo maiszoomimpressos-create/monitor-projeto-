@@ -1,3 +1,6 @@
+# MODELO: copie este arquivo para `docs/agendador-externo.github-actions.yml` (copiar para `.github/workflows/`) para ativar.
+# (Não foi criado direto em .github/workflows porque o token usado pelo Grok Bot
+#  não tem o escopo "workflow" do GitHub.)
 # Agendador externo opcional (para intervalos menores que 1 dia no Vercel Hobby).
 #
 # Fica DESLIGADO até você configurar no GitHub (Settings > Secrets and variables > Actions):

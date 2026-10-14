@@ -9,10 +9,11 @@ Feito:
 - `sweep.ts`: todos os projetos ativos de todos os usuários, mais atrasados primeiro, lotes de 5, orçamento de 45 s (maxDuration 60 s); sobra fica para o próximo disparo (`deferred` na resposta).
 - Rota do cron: `Bearer CRON_SECRET` em tempo constante; falha na limpeza não derruba a resposta.
 - Painel: formulário novo e edição mostram só intervalos compatíveis + aviso do agendador; API recusa intervalo incompatível.
-- `.github/workflows/agendador-externo.yml`: chama a rotina a cada 15 min, **desligado** até configurar.
+- `docs/agendador-externo.github-actions.yml` (copiar para `.github/workflows/`): chama a rotina a cada 15 min, **desligado** até configurar.
 - Comentário da migration `users_ownership` atualizado: aplicada no Neon de produção em 14/10/2026.
 
 Para ativar intervalos menores que 1 dia (opcional):
+0. Copiar `docs/agendador-externo.github-actions.yml` para `.github/workflows/agendador-externo.yml` e commitar (exige token com escopo `workflow` ou edição pelo site do GitHub).
 1. GitHub > Settings > Secrets and variables > Actions: variable `ENABLE_EXTERNAL_SCHEDULER=true`; secrets `MONITOR_CRON_URL` (`https://<domínio>/api/cron/check-projects`) e `CRON_SECRET` (mesmo valor da Vercel).
 2. Vercel: `SCHEDULER_TICK_MINUTES=15`, `SCHEDULER_TICK_OFFSET_MINUTES=0` e redeploy.
 3. Alternativa: cron-job.org chamando a mesma URL com header `Authorization: Bearer <CRON_SECRET>`.
