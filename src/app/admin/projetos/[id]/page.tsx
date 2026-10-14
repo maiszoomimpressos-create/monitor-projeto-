@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/requireAdmin";
 import { serializeProject } from "@/lib/serialize";
 import ProjectDetail from "./ProjectDetail";
+import { allowedIntervals, getScheduleConfig, schedulerNote } from "@/lib/schedule";
 
 export const instant = false;
 
@@ -25,5 +26,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     take: 50,
   });
 
-  return <ProjectDetail project={serializeProject(project)} initialExecutions={executions} />;
+  const config = getScheduleConfig();
+  return (
+    <ProjectDetail
+      project={serializeProject(project)}
+      initialExecutions={executions}
+      intervals={allowedIntervals(config)}
+      schedulerNote={schedulerNote(config)}
+    />
+  );
 }

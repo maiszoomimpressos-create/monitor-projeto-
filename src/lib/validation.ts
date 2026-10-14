@@ -17,7 +17,9 @@ export const projectInputSchema = z.object({
   intervalMinutes: z
     .number()
     .int()
-    .min(1440, "O intervalo mínimo é de 1 dia (a verificação automática roda 1 vez por dia).")
+    // O mínimo efetivo depende do agendador ativo (SCHEDULER_TICK_MINUTES) e é
+    // checado nas rotas com isIntervalAllowed (src/lib/schedule.ts).
+    .min(5, "O intervalo mínimo é de 5 minutos.")
     .max(60 * 24 * 7, "O intervalo máximo é de 7 dias.")
     .default(1440),
   enabled: z.boolean().default(true),

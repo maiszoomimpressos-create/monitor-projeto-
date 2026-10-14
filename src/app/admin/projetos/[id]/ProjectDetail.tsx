@@ -11,10 +11,17 @@ type CheckStatusKey = keyof typeof STATUS_LABELS;
 export default function ProjectDetail({
   project,
   initialExecutions,
+  intervals,
+  schedulerNote,
 }: {
   project: ProjectView;
   initialExecutions: ExecutionView[];
+  intervals: { minutes: number; label: string }[];
+  schedulerNote: string;
 }) {
+  const intervalOptions = intervals.some((i) => i.minutes === project.intervalMinutes)
+    ? intervals
+    : [{ minutes: project.intervalMinutes, label: `${project.intervalMinutes} min (incompatível com o agendador atual)` }, ...intervals];
   const router = useRouter();
   const [executions, setExecutions] = useState(initialExecutions);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -151,7 +158,7 @@ export default function ProjectDetail({
             </div>
             <div>
               <dt className="text-gray-500">Intervalo</dt>
-              <dd>{project.intervalMinutes} minutos</dd>
+              <dd>{intervalOptions.find((i) => i.minutes === project.intervalMinutes)?.label ?? `${project.intervalMinutes} minutos`}</dd>
             </div>
             <div>
               <dt className="text-gray-500">Status</dt>
@@ -159,7 +166,10 @@ export default function ProjectDetail({
             </div>
             <div>
               <dt className="text-gray-500">Próxima execução prevista</dt>
-              <dd>{project.enabled ? formatDateTime(project.nextRunAt) : "—"}</dd>
+              <dd>
+                {project.enabled ? formatDateTime(project.nextRunAt) : "—"}
+                <span className="block text-xs text-gray-500">{schedulerNote}</span>
+              </dd>
             </div>
             <div>
               <dt className="text-gray-500">Última execução</dt>
@@ -208,15 +218,19 @@ export default function ProjectDetail({
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Intervalo (minutos)</label>
-              <input
-                type="number"
-                min={1440}
-                step={1440}
+              <label className="mb-1 block text-sm font-medium">Intervalo de verificação</label>
+              <select
                 value={form.intervalMinutes}
                 onChange={(e) => setForm((f) => ({ ...f, intervalMinutes: Number(e.target.value) }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              />
+              >
+                {intervalOptions.map((i) => (
+                  <option key={i.minutes} value={i.minutes}>
+                    {i.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">{schedulerNote}</p>
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input
