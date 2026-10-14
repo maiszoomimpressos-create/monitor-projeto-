@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/lib/schedule.test.ts",
+    "test": "node --import tsx --test src/lib/schedule.test.ts src/worker/loop.test.ts",
+    "worker": "node --import tsx src/worker/index.ts",
+    "worker:local": "node --env-file=.env.local --import tsx src/worker/index.ts",
     "postinstall": "prisma generate",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio"

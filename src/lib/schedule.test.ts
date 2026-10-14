@@ -19,7 +19,7 @@ test("config padrão é diária às 09:00 UTC e ignora valores inválidos", () =
   assert.deepEqual(getScheduleConfig({}), daily);
   assert.deepEqual(getScheduleConfig({ SCHEDULER_TICK_MINUTES: "abc" }), daily);
   assert.deepEqual(getScheduleConfig({ SCHEDULER_TICK_MINUTES: "1", SCHEDULER_TICK_OFFSET_MINUTES: "0" }), {
-    tickMinutes: 5,
+    tickMinutes: 1,
     offsetMinutes: 0,
   });
 });
@@ -76,4 +76,15 @@ test("intervalos permitidos respeitam o agendador", () => {
   assert.equal(isIntervalAllowed(60, daily), false);
   assert.equal(isIntervalAllowed(60, q15), true);
   assert.equal(isIntervalAllowed(20000, q15), false);
+});
+
+test("worker a cada 1 min: intervalos a partir de 5 min", () => {
+  const w: ScheduleConfig = { tickMinutes: 1, offsetMinutes: 0 };
+  assert.equal(allowedIntervals(w)[0].minutes, 5);
+  assert.equal(isIntervalAllowed(1, w), false);
+  assert.equal(isIntervalAllowed(5, w), true);
+  const last = d("2026-10-14T10:00:10Z");
+  assert.equal(isProjectDue(proj(5, last), d("2026-10-14T10:04:45Z"), w), true);
+  assert.equal(isProjectDue(proj(5, last), d("2026-10-14T10:04:00Z"), w), false);
+  assert.deepEqual(nextRunAt(proj(5, last), d("2026-10-14T10:01:00Z"), w), d("2026-10-14T10:05:00Z"));
 });

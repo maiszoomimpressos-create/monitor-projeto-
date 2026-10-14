@@ -1,0 +1,16 @@
+# Agendador próprio no Fly.io. Ajuste "app" e "primary_region" (gru = São Paulo).
+app = "supabase-uptime-worker"
+primary_region = "gru"
+
+[build]
+  dockerfile = "Dockerfile.worker"
+
+[env]
+  WORKER_TICK_SECONDS = "60"
+  SCHEDULER_TICK_MINUTES = "1"
+  SCHEDULER_TICK_OFFSET_MINUTES = "0"
+
+# Sem [http_service]: o worker não recebe tráfego e a máquina fica sempre ligada.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
