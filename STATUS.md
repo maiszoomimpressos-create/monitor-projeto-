@@ -1,9 +1,12 @@
 # STATUS.md
 
-_Última atualização: 14/10/2026 ~22:30 BRT (branch `feat/despertador-supabase`)._
+_Última atualização: 14/10/2026 ~23:30 BRT (branch `feat/checagem-http`: tipo Site/URL + lista de projetos)._
 Relatório completo da apuração: `C:\Users\Free\Desktop\CONTINUIDADE-SUPABASE\apuracao-grok.md` (fora do repositório).
 
 Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠 parcial · ❌ ausente/não confirmado
+
+## Objetivo
+Keep-alive de sistemas em planos gratuitos com leitura leve (D-009). Tipos: Supabase e Site/URL.
 
 ## Funcionalidades
 | Item | Estado | Onde |
@@ -15,6 +18,11 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 | Intervalo por projeto escolhido pelo cliente (D-001), painel só oferece intervalos ≥ período do agendador ativo (`SCHEDULER_TICK_MINUTES`); API recusa incompatíveis; "próxima execução" = próximo disparo real do agendador | 🟡 testado (unitário) | `src/lib/schedule.ts`, `src/app/admin/novo/**`, `ProjectDetail.tsx` |
 | Despertador via Supabase pg_cron + pg_net (POST a cada 1 min com `Bearer CRON_SECRET`) — opção principal (D-008) | 🟠 SQL e guia prontos; **não executado** em nenhum projeto Supabase | `sql/supabase-despertador.sql`, `docs/despertador-supabase.md` |
 | Agendador próprio (worker Node, ciclo a cada 60 s, sem sobreposição, shutdown gracioso, health opcional em `PORT`), reaproveitando `sweep.ts` | 🟡 testes do laço com mocks; iniciado localmente sem banco (falha graciosa); sem deploy | `src/worker/**`, `Dockerfile.worker`, `railway.json`, `fly.toml`, `ecosystem.config.cjs`, `docs/agendador-proprio.md` |
+| Projeto tipo **Site/URL** (HTTP GET/HEAD, timeout 30 s, 1 retry, ≤3 redirects, ≤64 KB, status esperado opcional, SSRF com DNS na conexão) | 🟡 testes unitários (URL/SSRF/classificação); **requisição real não testada** (DNS do box devolve 198.18.x, bloqueado pelo próprio SSRF) | `src/lib/httpCheck.ts`, `src/lib/ssrf.ts`, `src/lib/httpCheck.test.ts`, formulários |
+| Rotina: pool de 8 checagens com prazo final; HTTP só inicia com ≥ 32 s restantes, Supabase com ≥ 10 s | 🟡 | `src/lib/sweep.ts` |
+| Edição parcial (PATCH) não reaplica mais defaults (antes, alternar "ativo" redefinia intervalo e tabela) | 🟡 | `src/lib/validation.ts` |
+| `/admin`: barra flutuante + "Novo projeto" + lista dos projetos do usuário (nome, tipo, ativo, intervalo, último resultado com HTTP/latência/horário, próxima execução, link p/ detalhe); estado vazio | 🟡 build ok; render testado com dados fictícios | `src/app/admin/page.tsx`, `src/app/admin/ProjectList.tsx` |
+| Datas exibidas sempre em America/Sao_Paulo (servidor roda em UTC) | 🟡 | `src/lib/statusLabels.ts` |
 | Lock agendado compara `lastRunAt` lido (worker + cron da Vercel não checam 2x o mesmo vencimento) | 🟡 | `src/lib/runCheck.ts` |
 | `isProjectDue` com tolerância de meio período do agendador | ✅ testes unitários | `src/lib/schedule.ts`, `src/lib/schedule.test.ts` |
 | Rotina respeita tempo da função (orçamento 45 s de 60 s; vencidos que não couberem ficam para o próximo disparo, mais atrasados primeiro) | 🟡 | `src/lib/sweep.ts` |
@@ -28,9 +36,10 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 | Página pós-login: só barra flutuante (nome + Sair) e botão "Novo projeto" | 🟡 | `src/app/admin/page.tsx`, `src/app/admin/FloatingNav.tsx` |
 | Criptografia AES-256-GCM das chaves | 🟡 | `src/lib/crypto.ts` |
 | Proteção SSRF (https, `*.supabase.co/.in/.net`, DNS sem IP privado) | 🟠 (fetch segue redirects; faixas IPv6 incompletas) | `src/lib/ssrf.ts` |
-| Testes automatizados | 🟠 `schedule.test.ts` + `worker/loop.test.ts` (13 testes, `npm test`) | `src/lib/schedule.test.ts`, `src/worker/loop.test.ts` |
+| Testes automatizados | 🟠 19 testes (`npm test`): agendamento, laço do worker, SSRF/classificação HTTP | `src/lib/*.test.ts`, `src/worker/loop.test.ts` |
 
 ## Validações com evidência
+- Branch `feat/checagem-http` (14/10/2026, box, variáveis fictícias, sem banco): lint exit 0; tsc exit 0; `npm test` 19/19; build exit 0. Após a lista de projetos: lint, tsc, testes 19/19 e build novamente ok.
 - Branch `feat/despertador-supabase` (14/10/2026, box, variáveis fictícias): lint exit 0; tsc exit 0; `npm test` 13/13; build exit 0. O SQL do despertador **não foi executado** (sem acesso a banco).
 - Branch `feat/agendador-proprio` (14/10/2026, box, variáveis fictícias, sem banco): lint exit 0; tsc exit 0; `npm test` 13/13; `npm run build` exit 0; `npm run worker` iniciou, registrou falha de conexão por ciclo sem cair, respondeu ao health em `PORT` e encerrou com SIGTERM/SIGINT; sem `DATABASE_URL` sai com código 1 e mensagem clara. Docker não disponível no box: `Dockerfile.worker` **não foi construído**.
 - Branch `feat/rotina-checagem` (14/10/2026, box, variáveis fictícias, sem banco): `npm run lint` → exit 0; `npx tsc --noEmit --incremental false` → exit 0; `npm test` → 8 passaram, 0 falharam; `npm run build` → exit 0.
@@ -51,6 +60,7 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 5. Default do `schema.prisma` (`intervalMinutes` = 360) não alterado para evitar migration; a API sempre envia o intervalo escolhido.
 
 ## Bancos e configurações externas — NÃO confirmados
+- **Migration `20261015000000_project_type` APLICADA no Neon de produção em 14/10/2026 23:21 BRT** (informado pelo usuário).
 - **Migration `20261014000000_users_ownership` APLICADA no Neon de produção em 14/10/2026** (informado pelo usuário). Projetos antigos sem `ownerId` ficam invisíveis até atribuição.
 - `ADMIN_PASSWORD` não é mais usada; `ADMIN_SESSION_SECRET` continua obrigatória.
 - **Banco de controle (Neon):** `.env.local` local contém nomes de variáveis de Postgres/Neon preenchidas, mas **não foi verificado** se o banco existe, está acessível ou se a migration foi aplicada.

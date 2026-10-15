@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/requireAdmin";
 import { projectInputSchema } from "@/lib/validation";
 import { encryptSecret, lastFour } from "@/lib/crypto";
-import { assertHostResolvesToPublicIp, assertWellFormedSupabaseUrl, UnsafeUrlError } from "@/lib/ssrf";
+import { assertHostResolvesToPublicIp, assertWellFormedHttpUrl, assertWellFormedSupabaseUrl, UnsafeUrlError } from "@/lib/ssrf";
 import { serializeProject } from "@/lib/serialize";
 import { formatInterval, getScheduleConfig, isIntervalAllowed } from "@/lib/schedule";
 
@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const url = assertWellFormedSupabaseUrl(data.supabaseUrl);
+    const url =
+      data.type === "HTTP" ? assertWellFormedHttpUrl(data.supabaseUrl) : assertWellFormedSupabaseUrl(data.supabaseUrl);
     await assertHostResolvesToPublicIp(url.hostname);
   } catch (error) {
     if (error instanceof UnsafeUrlError) {
@@ -52,11 +53,15 @@ export async function POST(request: NextRequest) {
       ownerId: session.uid,
       name: data.name,
       supabaseUrl: data.supabaseUrl,
+      type: data.type,
+      httpMethod: data.httpMethod,
+      expectedStatus: data.type === "HTTP" ? (data.expectedStatus ?? null) : null,
       healthcheckTable: data.healthcheckTable,
       intervalMinutes: data.intervalMinutes,
       enabled: data.enabled,
-      encryptedKey: encryptSecret(data.apiKey),
-      keyLastFour: lastFour(data.apiKey),
+      // Projetos HTTP não têm credencial.
+      encryptedKey: data.type === "HTTP" ? "" : encryptSecret(data.apiKey),
+      keyLastFour: data.type === "HTTP" ? "" : lastFour(data.apiKey),
     },
   });
 

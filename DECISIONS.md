@@ -46,3 +46,10 @@ Cadastro e histórico ficam em um Postgres próprio (previsto Neon via Vercel), 
 **Decisão:** um projeto Supabase chama a cada 1 min `POST /api/cron/check-projects` na Vercel via pg_cron + pg_net, com `Authorization: Bearer CRON_SECRET` lido do Supabase Vault (`sql/supabase-despertador.sql`). Vercel com `SCHEDULER_TICK_MINUTES=1` e `SCHEDULER_TICK_OFFSET_MINUTES=0` (intervalos a partir de 5 min).
 **Reserva:** cron diário da Vercel continua ativo. **Alternativa:** worker próprio (D-007), não obrigatório.
 **Riscos:** no plano Free o projeto despertador pode ser pausado após 7 dias sem atividade de usuário (pg_cron não é documentado como atividade) → cadastrar o próprio despertador no monitor; limite de 60 s por chamada na Vercel (rotina usa 45 s; sobra vai para o minuto seguinte). Lock impede checagem dupla entre agendadores.
+
+## D-009 — Objetivo real: keep-alive com leitura leve (14/10/2026, decisão do usuário)
+**Decisão:** o produto existe para **manter acordados** sistemas em planos gratuitos que pausam/congelam por inatividade, gerando atividade periódica. A atividade é sempre uma **leitura leve**: nada de login automatizado, envio de formulário ou inserção de dados.
+**Implementação:** dois tipos de projeto (`Project.type`):
+- `SUPABASE` — leitura PostgREST de 1 linha (como antes, restrito a `*.supabase.co/.in/.net`).
+- `HTTP` — GET (ou HEAD) em URL https pública; timeout 30 s; 1 retentativa se houver tempo; sucesso = 2xx/3xx ou status esperado; no máximo 3 redirects; lê no máximo 64 KB; User-Agent `MonitorKeepAlive/1.0`; SSRF: só https na porta 443, bloqueio de IPs privados/loopback/link-local/metadata/NAT64 e nomes internos, DNS validado no momento da conexão (lookup próprio) e em cada redirect.
+**Impacto:** migration `20261015000000_project_type` (precisa ser aplicada no Neon antes do deploy). Rotina passou a usar pool de 8 checagens com prazo final; HTTP só inicia se restarem ≥ 32 s do orçamento de 45 s.

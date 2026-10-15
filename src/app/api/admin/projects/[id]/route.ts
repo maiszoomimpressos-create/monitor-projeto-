@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/requireAdmin";
 import { projectUpdateSchema } from "@/lib/validation";
 import { encryptSecret, lastFour } from "@/lib/crypto";
-import { assertHostResolvesToPublicIp, assertWellFormedSupabaseUrl, UnsafeUrlError } from "@/lib/ssrf";
+import { assertHostResolvesToPublicIp, assertWellFormedHttpUrl, assertWellFormedSupabaseUrl, UnsafeUrlError } from "@/lib/ssrf";
 import { serializeProject } from "@/lib/serialize";
 import { formatInterval, getScheduleConfig, isIntervalAllowed } from "@/lib/schedule";
 
@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const nextUrl = data.supabaseUrl ?? existing.supabaseUrl;
   if (data.supabaseUrl) {
     try {
-      const url = assertWellFormedSupabaseUrl(nextUrl);
+      const url = existing.type === "HTTP" ? assertWellFormedHttpUrl(nextUrl) : assertWellFormedSupabaseUrl(nextUrl);
       await assertHostResolvesToPublicIp(url.hostname);
     } catch (error) {
       if (error instanceof UnsafeUrlError) {
@@ -55,9 +55,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       name: data.name ?? existing.name,
       supabaseUrl: nextUrl,
       healthcheckTable: data.healthcheckTable ?? existing.healthcheckTable,
+      httpMethod: data.httpMethod ?? existing.httpMethod,
+      expectedStatus: existing.type === "HTTP" && data.expectedStatus !== undefined ? data.expectedStatus : existing.expectedStatus,
       intervalMinutes: data.intervalMinutes ?? existing.intervalMinutes,
       enabled: data.enabled ?? existing.enabled,
-      ...(data.apiKey
+      ...(data.apiKey && existing.type === "SUPABASE"
         ? { encryptedKey: encryptSecret(data.apiKey), keyLastFour: lastFour(data.apiKey) }
         : {}),
     },

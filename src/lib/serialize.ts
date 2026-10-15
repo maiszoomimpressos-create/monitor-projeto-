@@ -10,7 +10,7 @@ export function serializeProject(project: Project) {
   void encryptedKey;
   return {
     ...rest,
-    maskedKey: `••••••••${project.keyLastFour}`,
+    maskedKey: project.keyLastFour ? `••••••••${project.keyLastFour}` : "—",
     nextRunAt: nextRunAt(project, new Date(), getScheduleConfig()),
   };
 }
