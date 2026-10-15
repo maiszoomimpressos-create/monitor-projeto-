@@ -5,7 +5,7 @@ _Última sessão: 14/10/2026 — Grok Bot (branch `feat/checagem-http`)._
 ## Sessão 7 — keep-alive e tipo Site/URL (branch `feat/checagem-http`)
 Feito:
 - D-009 (objetivo keep-alive, leitura leve); README e AGENTS atualizados.
-- `Project.type` (SUPABASE | HTTP), `httpMethod`, `expectedStatus`; migration `20261015000000_project_type` (**só arquivo**).
+- `Project.type` (SUPABASE | HTTP), `httpMethod`, `expectedStatus`; migration `20261015000000_project_type` (aplicada no Neon em 14/10/2026 23:21 BRT).
 - `src/lib/httpCheck.ts` (https.request com lookup que bloqueia IP interno, redirects revalidados, limite de bytes, timeout 30 s, 1 retry dentro do prazo).
 - `ssrf.ts`: `assertWellFormedHttpUrl`, IPv6 mapeado em hexa, NAT64, multicast.
 - Formulários de criar/editar com tipo e campos condicionais; tipo não muda na edição.
