@@ -15,8 +15,11 @@ export default function NewProjectForm({
 }) {
   const router = useRouter();
   const [form, setForm] = useState({
+    type: "SUPABASE" as "SUPABASE" | "HTTP",
     name: "",
     supabaseUrl: "",
+    httpMethod: "GET" as "GET" | "HEAD",
+    expectedStatus: "",
     apiKey: "",
     healthcheckTable: "_uptime_healthcheck",
     intervalMinutes: intervals[0]?.minutes ?? 1440,
@@ -33,7 +36,27 @@ export default function NewProjectForm({
       const res = await fetch("/api/admin/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(
+          form.type === "HTTP"
+            ? {
+                type: "HTTP",
+                name: form.name,
+                supabaseUrl: form.supabaseUrl,
+                httpMethod: form.httpMethod,
+                expectedStatus: form.expectedStatus ? Number(form.expectedStatus) : null,
+                intervalMinutes: form.intervalMinutes,
+                enabled: form.enabled,
+              }
+            : {
+                type: "SUPABASE",
+                name: form.name,
+                supabaseUrl: form.supabaseUrl,
+                apiKey: form.apiKey,
+                healthcheckTable: form.healthcheckTable,
+                intervalMinutes: form.intervalMinutes,
+                enabled: form.enabled,
+              },
+        ),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -53,9 +76,32 @@ export default function NewProjectForm({
         <Link href="/admin" className="text-sm text-gray-500 hover:underline">
           ← Voltar
         </Link>
-        <h1 className="mb-4 mt-2 text-xl font-semibold">Cadastrar projeto Supabase</h1>
+        <h1 className="mb-4 mt-2 text-xl font-semibold">Cadastrar projeto</h1>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <fieldset>
+            <legend className="mb-1 block text-sm font-medium">Tipo</legend>
+            <div className="flex gap-4 text-sm">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="type"
+                  checked={form.type === "SUPABASE"}
+                  onChange={() => setForm((f) => ({ ...f, type: "SUPABASE" }))}
+                />
+                Supabase (leitura no banco)
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="type"
+                  checked={form.type === "HTTP"}
+                  onChange={() => setForm((f) => ({ ...f, type: "HTTP" }))}
+                />
+                Site / URL
+              </label>
+            </div>
+          </fieldset>
           <div>
             <label className="mb-1 block text-sm font-medium">Nome do projeto</label>
             <input
@@ -68,18 +114,53 @@ export default function NewProjectForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">URL do Supabase</label>
+            <label className="mb-1 block text-sm font-medium">
+              {form.type === "HTTP" ? "URL do site" : "URL do Supabase"}
+            </label>
             <input
               required
               value={form.supabaseUrl}
               onChange={(e) => setForm((f) => ({ ...f, supabaseUrl: e.target.value }))}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              placeholder="https://xxxxxxxx.supabase.co"
+              placeholder={form.type === "HTTP" ? "https://meu-app.onrender.com/" : "https://xxxxxxxx.supabase.co"}
             />
             <p className="mt-1 text-xs text-gray-500">
-              Deve ser um domínio *.supabase.co / *.supabase.in / *.supabase.net.
+              {form.type === "HTTP"
+                ? "Endereço público com https. Faremos uma leitura leve (sem login, sem enviar dados)."
+                : "Deve ser um domínio *.supabase.co / *.supabase.in / *.supabase.net."}
             </p>
           </div>
+
+          {form.type === "HTTP" && (
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="mb-1 block text-sm font-medium">Método</label>
+                <select
+                  value={form.httpMethod}
+                  onChange={(e) => setForm((f) => ({ ...f, httpMethod: e.target.value as "GET" | "HEAD" }))}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <option value="GET">GET (recomendado)</option>
+                  <option value="HEAD">HEAD</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="mb-1 block text-sm font-medium">Status esperado (opcional)</label>
+                <input
+                  type="number"
+                  min={100}
+                  max={599}
+                  value={form.expectedStatus}
+                  onChange={(e) => setForm((f) => ({ ...f, expectedStatus: e.target.value }))}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                  placeholder="qualquer 2xx/3xx"
+                />
+              </div>
+            </div>
+          )}
+
+          {form.type === "SUPABASE" && (
+          <>
 
           <div>
             <label className="mb-1 block text-sm font-medium">Chave de API (anon/pública)</label>
@@ -110,6 +191,8 @@ export default function NewProjectForm({
               <code>sql/supabase_healthcheck_migration.sql</code>.
             </p>
           </div>
+          </>
+          )}
 
           <div>
             <label className="mb-1 block text-sm font-medium">Intervalo de verificação</label>

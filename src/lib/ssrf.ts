@@ -64,13 +64,16 @@ const PRIVATE_V4_RANGES = [
   "240.0.0.0/4",
 ];
 
-function isPrivateOrReservedIp(ip: string): boolean {
+export function isPrivateOrReservedIp(ip: string): boolean {
   if (isIP(ip) === 4) {
     return PRIVATE_V4_RANGES.some((cidr) => inCidr(ip, cidr));
   }
   if (isIP(ip) === 6) {
     const normalized = ip.toLowerCase();
     if (normalized === "::1" || normalized === "::") return true;
+    if (normalized.startsWith("64:ff9b:")) return true; // NAT64 (pode mapear IPv4 interno)
+    if (normalized.startsWith("2001:db8:") || normalized.startsWith("2001:0db8:")) return true; // documentação
+    if (normalized.startsWith("ff")) return true; // multicast
     if (normalized.startsWith("fe8") || normalized.startsWith("fe9") || normalized.startsWith("fea") || normalized.startsWith("feb")) {
       return true; // link-local fe80::/10
     }
@@ -80,6 +83,14 @@ function isPrivateOrReservedIp(ip: string): boolean {
     if (normalized.startsWith("::ffff:")) {
       const mapped = normalized.replace("::ffff:", "");
       if (isIP(mapped) === 4) return isPrivateOrReservedIp(mapped);
+      // Forma hexadecimal (ex.: ::ffff:7f00:1 = 127.0.0.1), como o WHATWG URL normaliza.
+      const hex = mapped.match(/^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+      if (hex) {
+        const hi = parseInt(hex[1], 16);
+        const lo = parseInt(hex[2], 16);
+        return isPrivateOrReservedIp(`${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`);
+      }
+      return true;
     }
     return false;
   }
@@ -102,4 +113,41 @@ export async function assertHostResolvesToPublicIp(hostname: string): Promise<vo
       );
     }
   }
+}
+
+const BLOCKED_HOSTNAMES = ["localhost", "metadata.google.internal", "metadata"];
+const BLOCKED_SUFFIXES = [".localhost", ".local", ".internal", ".lan", ".home.arpa"];
+
+/**
+ * Valida uma URL de site/app (tipo HTTP): https, sem credenciais, porta padrão,
+ * sem IP literal privado e sem nomes internos. O DNS é revalidado no momento da
+ * conexão (ver httpCheck.ts), inclusive em cada redirect.
+ */
+export function assertWellFormedHttpUrl(rawUrl: string): URL {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new UnsafeUrlError("URL inválida.");
+  }
+  if (url.protocol !== "https:") {
+    throw new UnsafeUrlError("A URL deve usar https.");
+  }
+  if (url.username || url.password) {
+    throw new UnsafeUrlError("A URL não pode conter credenciais embutidas.");
+  }
+  if (url.port && url.port !== "443") {
+    throw new UnsafeUrlError("Só é permitida a porta padrão do https (443).");
+  }
+  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "").replace(/\.$/, "");
+  if (isIP(host)) {
+    if (isPrivateOrReservedIp(host)) {
+      throw new UnsafeUrlError("Endereço IP privado/interno não é permitido.");
+    }
+  } else {
+    if (!host.includes(".") || BLOCKED_HOSTNAMES.includes(host) || BLOCKED_SUFFIXES.some((s) => host.endsWith(s))) {
+      throw new UnsafeUrlError("Domínio interno/local não é permitido.");
+    }
+  }
+  return url;
 }

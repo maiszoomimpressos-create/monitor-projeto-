@@ -21,6 +21,11 @@ enum CheckStatus {
   ERRO_DESCONHECIDO
 }
 
+enum ProjectType {
+  SUPABASE // leitura leve via PostgREST (tabela de verificação + chave anon)
+  HTTP     // GET/HEAD em uma URL pública (site/app em plano gratuito)
+}
+
 model User {
   id           String    @id @default(cuid())
   name         String
@@ -40,12 +45,19 @@ model Project {
   ownerId           String?
   owner             User?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name              String
+  type              ProjectType @default(SUPABASE)
+  // URL do projeto: base *.supabase.co (SUPABASE) ou URL completa https (HTTP).
+  // Nome mantido por compatibilidade com o banco existente.
   supabaseUrl       String
+  // Só para HTTP: método (GET | HEAD) e status esperado (null = qualquer 2xx/3xx).
+  httpMethod        String   @default("GET")
+  expectedStatus    Int?
   // Nome da tabela de verificação na API REST (PostgREST), ex: "_uptime_healthcheck"
   healthcheckTable  String   @default("_uptime_healthcheck")
 
   // Credencial (chave anon/restrita) criptografada em repouso (AES-256-GCM).
   // A chave de criptografia (ENCRYPTION_KEY) NUNCA fica no banco.
+  // Vazios ("") em projetos HTTP, que não usam credencial.
   encryptedKey      String
   keyLastFour       String // últimos caracteres da chave, apenas para exibição/identificação
 

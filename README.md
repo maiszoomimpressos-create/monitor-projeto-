@@ -1,14 +1,21 @@
-# Monitor de Disponibilidade Supabase
+# Monitor Keep-Alive (Supabase e sites)
 
-Painel web + agendamento no servidor para checar periodicamente se os seus
-projetos Supabase continuam respondendo, através de uma leitura real e leve
-no banco (via API REST/PostgREST) — sem navegador aberto, sem celular ligado,
-sem simular usuário.
+**Objetivo:** manter **acordados** sistemas hospedados em planos gratuitos que pausam ou
+congelam por inatividade (projetos Supabase Free, apps em Render/Railway/Fly etc.), gerando
+atividade periódica com **leituras leves** — sem login, sem inserir dados (D-009). Cada
+usuário cadastra seus projetos e escolhe a frequência (D-001).
 
-> **Limite importante:** estas checagens **não garantem** que um projeto no
-> plano gratuito do Supabase deixará de ser pausado por inatividade. Elas
-> apenas avisam, com evidência, quando um projeto já cadastrado parece
-> inacessível — a restauração continua sendo manual, pelo painel do Supabase.
+Tipos de projeto:
+- **Supabase:** leitura de 1 linha (`select=id&limit=1`) na tabela `_uptime_healthcheck` via
+  PostgREST com a chave anon (`sql/supabase_healthcheck_migration.sql`).
+- **Site / URL:** `GET` (ou `HEAD`) em uma URL https pública, timeout de 30 s, 1 nova tentativa,
+  sucesso = 2xx/3xx (ou status esperado), corpo limitado a 64 KB, proteção SSRF.
+
+> A política de pausa de cada provedor pode mudar; o monitor gera atividade, mas não há
+> garantia de que o provedor a considere suficiente. Veja `docs/despertador-supabase.md`.
+
+O texto abaixo descreve a implementação original (apenas Supabase); `STATUS.md` é a fonte
+atualizada do estado do projeto.
 
 ## Arquitetura
 

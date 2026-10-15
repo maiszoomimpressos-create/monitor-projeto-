@@ -7,6 +7,9 @@ export type { CheckStatus };
 export interface ProjectView {
   id: string;
   name: string;
+  type: "SUPABASE" | "HTTP";
+  httpMethod: string;
+  expectedStatus: number | null;
   supabaseUrl: string;
   healthcheckTable: string;
   maskedKey: string;

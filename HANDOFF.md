@@ -1,6 +1,23 @@
 # HANDOFF.md
 
-_Última sessão: 14/10/2026 — Grok Bot (branch `feat/despertador-supabase`)._
+_Última sessão: 14/10/2026 — Grok Bot (branch `feat/checagem-http`)._
+
+## Sessão 7 — keep-alive e tipo Site/URL (branch `feat/checagem-http`)
+Feito:
+- D-009 (objetivo keep-alive, leitura leve); README e AGENTS atualizados.
+- `Project.type` (SUPABASE | HTTP), `httpMethod`, `expectedStatus`; migration `20261015000000_project_type` (**só arquivo**).
+- `src/lib/httpCheck.ts` (https.request com lookup que bloqueia IP interno, redirects revalidados, limite de bytes, timeout 30 s, 1 retry dentro do prazo).
+- `ssrf.ts`: `assertWellFormedHttpUrl`, IPv6 mapeado em hexa, NAT64, multicast.
+- Formulários de criar/editar com tipo e campos condicionais; tipo não muda na edição.
+- `sweep.ts`: pool de 8 com prazo final (não passa de 45 s).
+- Correção: PATCH parcial não reaplica defaults.
+
+**ANTES DO DEPLOY:** aplicar a migration no Neon (`npm run db:migrate:deploy`, com autorização). Sem ela o site quebra ao listar projetos.
+
+Pendências:
+- Testar checagem HTTP real (no box o DNS é falso e o SSRF bloqueia tudo — comportamento correto).
+- Projetos HTTP guardam `encryptedKey`/`keyLastFour` vazios (colunas obrigatórias).
+- Campo de URL continua chamado `supabaseUrl` no banco/API por compatibilidade.
 
 ## Sessão 6 — despertador via Supabase (branch `feat/despertador-supabase`)
 Feito:

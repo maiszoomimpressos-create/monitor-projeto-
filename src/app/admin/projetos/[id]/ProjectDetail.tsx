@@ -35,7 +35,10 @@ export default function ProjectDetail({
     intervalMinutes: project.intervalMinutes,
     enabled: project.enabled,
     apiKey: "",
+    httpMethod: project.httpMethod,
+    expectedStatus: project.expectedStatus ? String(project.expectedStatus) : "",
   });
+  const isHttp = project.type === "HTTP";
 
   async function refreshHistory() {
     const res = await fetch(`/api/admin/projects/${project.id}/history`);
@@ -70,11 +73,16 @@ export default function ProjectDetail({
       const payload: Record<string, unknown> = {
         name: form.name,
         supabaseUrl: form.supabaseUrl,
-        healthcheckTable: form.healthcheckTable,
         intervalMinutes: Number(form.intervalMinutes),
         enabled: form.enabled,
       };
-      if (form.apiKey.trim()) payload.apiKey = form.apiKey.trim();
+      if (isHttp) {
+        payload.httpMethod = form.httpMethod;
+        payload.expectedStatus = form.expectedStatus ? Number(form.expectedStatus) : null;
+      } else {
+        payload.healthcheckTable = form.healthcheckTable;
+        if (form.apiKey.trim()) payload.apiKey = form.apiKey.trim();
+      }
 
       const res = await fetch(`/api/admin/projects/${project.id}`, {
         method: "PATCH",
@@ -145,17 +153,32 @@ export default function ProjectDetail({
         {!editing ? (
           <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div>
+              <dt className="text-gray-500">Tipo</dt>
+              <dd>{isHttp ? "Site / URL" : "Supabase"}</dd>
+            </div>
+            <div>
               <dt className="text-gray-500">URL</dt>
-              <dd>{project.supabaseUrl}</dd>
+              <dd className="break-all">{project.supabaseUrl}</dd>
             </div>
-            <div>
-              <dt className="text-gray-500">Tabela de verificação</dt>
-              <dd>{project.healthcheckTable}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Chave</dt>
-              <dd>{project.maskedKey}</dd>
-            </div>
+            {isHttp ? (
+              <div>
+                <dt className="text-gray-500">Método / status esperado</dt>
+                <dd>
+                  {project.httpMethod} / {project.expectedStatus ?? "qualquer 2xx/3xx"}
+                </dd>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <dt className="text-gray-500">Tabela de verificação</dt>
+                  <dd>{project.healthcheckTable}</dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500">Chave</dt>
+                  <dd>{project.maskedKey}</dd>
+                </div>
+              </>
+            )}
             <div>
               <dt className="text-gray-500">Intervalo</dt>
               <dd>{intervalOptions.find((i) => i.minutes === project.intervalMinutes)?.label ?? `${project.intervalMinutes} minutos`}</dd>
@@ -191,13 +214,41 @@ export default function ProjectDetail({
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">URL do Supabase</label>
+              <label className="mb-1 block text-sm font-medium">{isHttp ? "URL do site" : "URL do Supabase"}</label>
               <input
                 value={form.supabaseUrl}
                 onChange={(e) => setForm((f) => ({ ...f, supabaseUrl: e.target.value }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
               />
             </div>
+            {isHttp ? (
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="mb-1 block text-sm font-medium">Método</label>
+                <select
+                  value={form.httpMethod}
+                  onChange={(e) => setForm((f) => ({ ...f, httpMethod: e.target.value }))}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <option value="GET">GET</option>
+                  <option value="HEAD">HEAD</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="mb-1 block text-sm font-medium">Status esperado (opcional)</label>
+                <input
+                  type="number"
+                  min={100}
+                  max={599}
+                  value={form.expectedStatus}
+                  onChange={(e) => setForm((f) => ({ ...f, expectedStatus: e.target.value }))}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                  placeholder="qualquer 2xx/3xx"
+                />
+              </div>
+            </div>
+            ) : (
+              <>
             <div>
               <label className="mb-1 block text-sm font-medium">Tabela de verificação</label>
               <input
@@ -217,6 +268,8 @@ export default function ProjectDetail({
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
               />
             </div>
+              </>
+            )}
             <div>
               <label className="mb-1 block text-sm font-medium">Intervalo de verificação</label>
               <select

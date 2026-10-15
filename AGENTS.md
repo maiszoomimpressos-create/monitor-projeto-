@@ -3,7 +3,7 @@
 **Antes de trabalhar, leia nesta ordem:** `STATUS.md` → `HANDOFF.md` → `DECISIONS.md`.
 
 ## Objetivo do sistema
-Consultar periodicamente vários projetos Supabase com leituras leves e reais no banco (API REST/PostgREST), com agendamento no servidor e painel administrativo. **A frequência/quantidade de acessos a cada projeto monitorado é definida pelo cliente** (ver `DECISIONS.md`, D-001).
+**Keep-alive:** manter acordados sistemas em planos gratuitos que pausam/congelam por inatividade (Supabase Free, sites/apps free), gerando atividade periódica com **leituras leves** (sem login, sem inserção) — D-009. Tipos de projeto: **Supabase** (leitura via PostgREST) e **Site/URL** (GET/HEAD https). **A frequência de acesso a cada projeto é definida pelo cliente** (D-001). Agendamento principal: despertador Supabase pg_cron → Vercel (D-008).
 
 ## Stack (conferida no código em 14/10/2026)
 Next.js 16.4 (App Router, `src/proxy.ts`) · React 19.3 · Prisma 6.19 + PostgreSQL (banco de controle, previsto Neon) · Zod 4 · Tailwind 4 · Vercel + Vercel Cron Jobs (`vercel.ts`).

@@ -1,4 +1,5 @@
-import { CheckStatus, Project } from "@prisma/client";
+import { CheckStatus, Project, ProjectType } from "@prisma/client";
+import { performHttpCheckWithRetry } from "@/lib/httpCheck";
 import { prisma } from "@/lib/db";
 import { decryptSecret } from "@/lib/crypto";
 import { performCheckWithRetry } from "@/lib/check";
@@ -51,7 +52,8 @@ async function releaseLock(projectId: string) {
 
 export async function runCheckForProject(
   project: Project,
-  triggeredBy: TriggerSource
+  triggeredBy: TriggerSource,
+  opts: { deadline?: number } = {}
 ): Promise<RunCheckResult> {
   const locked = await tryAcquireLock(project.id, triggeredBy === "cron" ? project.lastRunAt : undefined);
   if (!locked) {
@@ -61,15 +63,28 @@ export async function runCheckForProject(
   try {
     let outcome: Awaited<ReturnType<typeof performCheckWithRetry>>;
     try {
-      const url = assertWellFormedSupabaseUrl(project.supabaseUrl);
-      await assertHostResolvesToPublicIp(url.hostname);
+      if (project.type === ProjectType.HTTP) {
+        // SSRF: URL validada aqui e DNS revalidado na conexão e em cada redirect.
+        outcome = await performHttpCheckWithRetry({
+          url: project.supabaseUrl,
+          method: project.httpMethod === "HEAD" ? "HEAD" : "GET",
+          expectedStatus: project.expectedStatus,
+          deadline: opts.deadline,
+        });
+      } else {
+        const url = assertWellFormedSupabaseUrl(project.supabaseUrl);
+        await assertHostResolvesToPublicIp(url.hostname);
 
-      const apiKey = decryptSecret(project.encryptedKey);
-      outcome = await performCheckWithRetry({
-        supabaseUrl: project.supabaseUrl,
-        apiKey,
-        table: project.healthcheckTable,
-      });
+        const apiKey = decryptSecret(project.encryptedKey);
+        const remaining = opts.deadline ? opts.deadline - Date.now() : Infinity;
+        outcome = await performCheckWithRetry({
+          supabaseUrl: project.supabaseUrl,
+          apiKey,
+          table: project.healthcheckTable,
+          maxAttempts: remaining >= 20_000 ? 2 : 1,
+          timeoutMs: Math.max(1_000, Math.min(8_000, remaining)),
+        });
+      }
     } catch (error) {
       if (error instanceof UnsafeUrlError) {
         outcome = {
