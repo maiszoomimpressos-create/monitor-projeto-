@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import SecretInput from "@/components/SecretInput";
 import { useState } from "react";
 import type { ExecutionView, ProjectView } from "@/lib/types";
 import { formatDateTime, STATUS_LABELS } from "@/lib/statusLabels";
@@ -261,8 +262,7 @@ export default function ProjectDetail({
               <label className="mb-1 block text-sm font-medium">
                 Nova chave de API (deixe em branco para manter a atual)
               </label>
-              <input
-                type="password"
+              <SecretInput
                 value={form.apiKey}
                 onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"

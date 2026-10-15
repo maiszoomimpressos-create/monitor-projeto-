@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import SecretInput from "@/components/SecretInput";
 
 type IntervalOption = { minutes: number; label: string };
 
@@ -164,9 +165,8 @@ export default function NewProjectForm({
 
           <div>
             <label className="mb-1 block text-sm font-medium">Chave de API (anon/pública)</label>
-            <input
+            <SecretInput
               required
-              type="password"
               value={form.apiKey}
               onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
