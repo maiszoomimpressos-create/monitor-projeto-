@@ -11,8 +11,9 @@ Feito:
 - Formulários de criar/editar com tipo e campos condicionais; tipo não muda na edição.
 - `sweep.ts`: pool de 8 com prazo final (não passa de 45 s).
 - Correção: PATCH parcial não reaplica defaults.
+- `/admin` agora lista os projetos do usuário (`ProjectList.tsx`, server component; última execução via `distinct`). `Dashboard.tsx` (não usado) removido. Datas em America/Sao_Paulo.
 
-**ANTES DO DEPLOY:** aplicar a migration no Neon (`npm run db:migrate:deploy`, com autorização). Sem ela o site quebra ao listar projetos.
+Migration `20261015000000_project_type` **aplicada no Neon de produção em 14/10/2026 23:21 BRT**.
 
 Pendências:
 - Testar checagem HTTP real (no box o DNS é falso e o SSRF bloqueia tudo — comportamento correto).

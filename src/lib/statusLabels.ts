@@ -33,5 +33,7 @@ export function formatDateTime(value: string | Date | null | undefined): string 
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "medium",
+    // Sempre no fuso do usuário (o servidor da Vercel roda em UTC).
+    timeZone: "America/Sao_Paulo",
   }).format(date);
 }

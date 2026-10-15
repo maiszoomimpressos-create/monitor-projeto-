@@ -1,6 +1,5 @@
 -- Tipo de projeto (SUPABASE | HTTP) e campos da checagem HTTP.
--- NÃO aplicada em nenhum banco. Aplicar no Neon (npm run db:migrate:deploy)
--- ANTES do deploy desta versão, com autorização do usuário.
+-- APLICADA no banco de controle de produção (Neon) em 14/10/2026 23:21 BRT.
 -- Projetos existentes ficam como SUPABASE (default).
 
 CREATE TYPE "ProjectType" AS ENUM ('SUPABASE', 'HTTP');
