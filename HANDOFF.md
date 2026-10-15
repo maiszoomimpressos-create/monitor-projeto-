@@ -1,6 +1,11 @@
 # HANDOFF.md
 
-_Última sessão: 14/10/2026 — Grok Bot (branch `feat/checagem-http`)._
+_Última sessão: 15/10/2026 — Grok Bot (branch `feat/email-conta`)._
+
+## Sessão 8 — e-mail da conta (branch `feat/email-conta`)
+- Coluna opcional `Project.accountEmail` (só referência/organização, nunca usada para acesso), validada com Zod (e-mail, ≤ 254, vazio = null), nos formulários, detalhe e cartão da lista.
+- **Migration `20261015200000_project_account_email` NÃO aplicada — aplicar no Neon antes do deploy** (`npm run db:migrate:deploy`, com autorização).
+- Antes desta sessão: PR #6 (botão de olho `SecretInput`) mesclado.
 
 ## Sessão 7 — keep-alive e tipo Site/URL (branch `feat/checagem-http`)
 Feito:

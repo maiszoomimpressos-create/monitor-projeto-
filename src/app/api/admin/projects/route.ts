@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
       type: data.type,
       httpMethod: data.httpMethod,
       expectedStatus: data.type === "HTTP" ? (data.expectedStatus ?? null) : null,
+      accountEmail: data.accountEmail ?? null,
       healthcheckTable: data.healthcheckTable,
       intervalMinutes: data.intervalMinutes,
       enabled: data.enabled,

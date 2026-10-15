@@ -68,3 +68,14 @@ test("checagem recusa URL interna sem fazer requisição", async () => {
   assert.equal(r.status, "FALHA_CONFIGURACAO");
   assert.equal(r.httpStatus, null);
 });
+
+test("e-mail da conta: opcional, validado, vazio vira null", async () => {
+  const { projectInputSchema, projectUpdateSchema } = await import("./validation");
+  const base = { name: "a", supabaseUrl: "https://x.com", type: "HTTP" as const };
+  assert.equal(projectInputSchema.parse(base).accountEmail, undefined);
+  assert.equal(projectInputSchema.parse({ ...base, accountEmail: "" }).accountEmail, null);
+  assert.equal(projectInputSchema.parse({ ...base, accountEmail: " Ana@Exemplo.com " }).accountEmail, "ana@exemplo.com");
+  assert.equal(projectInputSchema.safeParse({ ...base, accountEmail: "nao-e-email" }).success, false);
+  assert.equal(projectInputSchema.safeParse({ ...base, accountEmail: `${"a".repeat(250)}@x.com` }).success, false);
+  assert.deepEqual(projectUpdateSchema.parse({ enabled: false }), { enabled: false });
+});

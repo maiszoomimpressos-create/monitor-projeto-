@@ -56,6 +56,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       supabaseUrl: nextUrl,
       healthcheckTable: data.healthcheckTable ?? existing.healthcheckTable,
       httpMethod: data.httpMethod ?? existing.httpMethod,
+      accountEmail: data.accountEmail !== undefined ? data.accountEmail : existing.accountEmail,
       expectedStatus: existing.type === "HTTP" && data.expectedStatus !== undefined ? data.expectedStatus : existing.expectedStatus,
       intervalMinutes: data.intervalMinutes ?? existing.intervalMinutes,
       enabled: data.enabled ?? existing.enabled,

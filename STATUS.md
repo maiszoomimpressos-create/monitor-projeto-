@@ -1,6 +1,6 @@
 # STATUS.md
 
-_Última atualização: 14/10/2026 ~23:30 BRT (branch `feat/checagem-http`: tipo Site/URL + lista de projetos)._
+_Última atualização: 15/10/2026 ~19:45 BRT (branch `feat/email-conta`)._
 Relatório completo da apuração: `C:\Users\Free\Desktop\CONTINUIDADE-SUPABASE\apuracao-grok.md` (fora do repositório).
 
 Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠 parcial · ❌ ausente/não confirmado
@@ -23,6 +23,8 @@ Keep-alive de sistemas em planos gratuitos com leitura leve (D-009). Tipos: Supa
 | Edição parcial (PATCH) não reaplica mais defaults (antes, alternar "ativo" redefinia intervalo e tabela) | 🟡 | `src/lib/validation.ts` |
 | `/admin`: barra flutuante + "Novo projeto" + lista dos projetos do usuário (nome, tipo, ativo, intervalo, último resultado com HTTP/latência/horário, próxima execução, link p/ detalhe); estado vazio | 🟡 build ok; render testado com dados fictícios | `src/app/admin/page.tsx`, `src/app/admin/ProjectList.tsx` |
 | Datas exibidas sempre em America/Sao_Paulo (servidor roda em UTC) | 🟡 | `src/lib/statusLabels.ts` |
+| Campo opcional "E-mail da conta" (referência, nunca usado para acesso) em criar/editar, detalhe e lista | 🟡 build ok; validação testada | `prisma/schema.prisma`, `src/lib/validation.ts`, formulários, `ProjectList.tsx` |
+| Botão de olho na chave anon (`SecretInput`) | 🟡 | `src/components/SecretInput.tsx` |
 | Lock agendado compara `lastRunAt` lido (worker + cron da Vercel não checam 2x o mesmo vencimento) | 🟡 | `src/lib/runCheck.ts` |
 | `isProjectDue` com tolerância de meio período do agendador | ✅ testes unitários | `src/lib/schedule.ts`, `src/lib/schedule.test.ts` |
 | Rotina respeita tempo da função (orçamento 45 s de 60 s; vencidos que não couberem ficam para o próximo disparo, mais atrasados primeiro) | 🟡 | `src/lib/sweep.ts` |
@@ -36,9 +38,10 @@ Keep-alive de sistemas em planos gratuitos com leitura leve (D-009). Tipos: Supa
 | Página pós-login: só barra flutuante (nome + Sair) e botão "Novo projeto" | 🟡 | `src/app/admin/page.tsx`, `src/app/admin/FloatingNav.tsx` |
 | Criptografia AES-256-GCM das chaves | 🟡 | `src/lib/crypto.ts` |
 | Proteção SSRF (https, `*.supabase.co/.in/.net`, DNS sem IP privado) | 🟠 (fetch segue redirects; faixas IPv6 incompletas) | `src/lib/ssrf.ts` |
-| Testes automatizados | 🟠 19 testes (`npm test`): agendamento, laço do worker, SSRF/classificação HTTP | `src/lib/*.test.ts`, `src/worker/loop.test.ts` |
+| Testes automatizados | 🟠 20 testes (`npm test`): agendamento, laço do worker, SSRF/classificação HTTP | `src/lib/*.test.ts`, `src/worker/loop.test.ts` |
 
 ## Validações com evidência
+- Branch `feat/email-conta` (15/10/2026, box, variáveis fictícias, sem banco): `prisma validate` ok; lint exit 0; tsc exit 0; `npm test` 20/20; build exit 0.
 - Branch `feat/checagem-http` (14/10/2026, box, variáveis fictícias, sem banco): lint exit 0; tsc exit 0; `npm test` 19/19; build exit 0. Após a lista de projetos: lint, tsc, testes 19/19 e build novamente ok.
 - Branch `feat/despertador-supabase` (14/10/2026, box, variáveis fictícias): lint exit 0; tsc exit 0; `npm test` 13/13; build exit 0. O SQL do despertador **não foi executado** (sem acesso a banco).
 - Branch `feat/agendador-proprio` (14/10/2026, box, variáveis fictícias, sem banco): lint exit 0; tsc exit 0; `npm test` 13/13; `npm run build` exit 0; `npm run worker` iniciou, registrou falha de conexão por ciclo sem cair, respondeu ao health em `PORT` e encerrou com SIGTERM/SIGINT; sem `DATABASE_URL` sai com código 1 e mensagem clara. Docker não disponível no box: `Dockerfile.worker` **não foi construído**.
@@ -60,6 +63,7 @@ Keep-alive de sistemas em planos gratuitos com leitura leve (D-009). Tipos: Supa
 5. Default do `schema.prisma` (`intervalMinutes` = 360) não alterado para evitar migration; a API sempre envia o intervalo escolhido.
 
 ## Bancos e configurações externas — NÃO confirmados
+- **Migration `20261015200000_project_account_email` NÃO aplicada.** Aplicar no Neon (`npm run db:migrate:deploy`, com autorização) **antes** do deploy desta versão; sem a coluna `accountEmail`, a leitura de projetos falha.
 - **Migration `20261015000000_project_type` APLICADA no Neon de produção em 14/10/2026 23:21 BRT** (informado pelo usuário).
 - **Migration `20261014000000_users_ownership` APLICADA no Neon de produção em 14/10/2026** (informado pelo usuário). Projetos antigos sem `ownerId` ficam invisíveis até atribuição.
 - `ADMIN_PASSWORD` não é mais usada; `ADMIN_SESSION_SECRET` continua obrigatória.
