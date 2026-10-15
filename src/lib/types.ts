@@ -10,6 +10,7 @@ export interface ProjectView {
   type: "SUPABASE" | "HTTP";
   httpMethod: string;
   expectedStatus: number | null;
+  accountEmail: string | null;
   supabaseUrl: string;
   healthcheckTable: string;
   maskedKey: string;

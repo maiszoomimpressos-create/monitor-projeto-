@@ -18,6 +18,7 @@ export default function NewProjectForm({
   const [form, setForm] = useState({
     type: "SUPABASE" as "SUPABASE" | "HTTP",
     name: "",
+    accountEmail: "",
     supabaseUrl: "",
     httpMethod: "GET" as "GET" | "HEAD",
     expectedStatus: "",
@@ -42,6 +43,7 @@ export default function NewProjectForm({
             ? {
                 type: "HTTP",
                 name: form.name,
+                accountEmail: form.accountEmail,
                 supabaseUrl: form.supabaseUrl,
                 httpMethod: form.httpMethod,
                 expectedStatus: form.expectedStatus ? Number(form.expectedStatus) : null,
@@ -51,6 +53,7 @@ export default function NewProjectForm({
             : {
                 type: "SUPABASE",
                 name: form.name,
+                accountEmail: form.accountEmail,
                 supabaseUrl: form.supabaseUrl,
                 apiKey: form.apiKey,
                 healthcheckTable: form.healthcheckTable,
@@ -112,6 +115,19 @@ export default function NewProjectForm({
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
               placeholder="Ex.: App de produção"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">E-mail da conta</label>
+            <input
+              type="email"
+              maxLength={254}
+              value={form.accountEmail}
+              onChange={(e) => setForm((f) => ({ ...f, accountEmail: e.target.value }))}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+              placeholder="voce@exemplo.com"
+            />
+            <p className="mt-1 text-xs text-gray-500">E-mail da conta onde este projeto foi criado (opcional)</p>
           </div>
 
           <div>

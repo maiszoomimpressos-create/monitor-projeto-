@@ -60,6 +60,9 @@ export default function ProjectList({
                 </div>
                 <span className="text-xs text-gray-500">Ver detalhes →</span>
               </div>
+              {p.accountEmail && (
+                <p className="mt-1 truncate text-xs text-gray-500">Conta: {p.accountEmail}</p>
+              )}
 
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-4">
                 <div>

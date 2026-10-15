@@ -6,6 +6,15 @@ const projectFields = {
   supabaseUrl: z.string().trim().url("Informe uma URL válida.").max(300),
   httpMethod: z.enum(["GET", "HEAD"]),
   expectedStatus: z.number().int().min(100).max(599).nullable(),
+  // Só referência/organização (vazio = sem e-mail).
+  accountEmail: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(254, "E-mail muito longo.")
+    .refine((v) => v === "" || z.email().safeParse(v).success, "E-mail da conta inválido.")
+    .transform((v) => (v === "" ? null : v))
+    .nullable(),
   healthcheckTable: z
     .string()
     .trim()
@@ -29,6 +38,7 @@ export const projectInputSchema = z
     apiKey: z.string().trim().max(2000).default(""),
     httpMethod: projectFields.httpMethod.default("GET"),
     expectedStatus: projectFields.expectedStatus.optional(),
+    accountEmail: projectFields.accountEmail.optional(),
     healthcheckTable: projectFields.healthcheckTable.default("_uptime_healthcheck"),
     intervalMinutes: projectFields.intervalMinutes.default(1440),
     enabled: projectFields.enabled.default(true),

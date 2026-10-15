@@ -31,6 +31,7 @@ export default function ProjectDetail({
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     name: project.name,
+    accountEmail: project.accountEmail ?? "",
     supabaseUrl: project.supabaseUrl,
     healthcheckTable: project.healthcheckTable,
     intervalMinutes: project.intervalMinutes,
@@ -73,6 +74,7 @@ export default function ProjectDetail({
     try {
       const payload: Record<string, unknown> = {
         name: form.name,
+        accountEmail: form.accountEmail,
         supabaseUrl: form.supabaseUrl,
         intervalMinutes: Number(form.intervalMinutes),
         enabled: form.enabled,
@@ -154,6 +156,10 @@ export default function ProjectDetail({
         {!editing ? (
           <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div>
+              <dt className="text-gray-500">E-mail da conta</dt>
+              <dd className="break-all">{project.accountEmail ?? "—"}</dd>
+            </div>
+            <div>
               <dt className="text-gray-500">Tipo</dt>
               <dd>{isHttp ? "Site / URL" : "Supabase"}</dd>
             </div>
@@ -213,6 +219,18 @@ export default function ProjectDetail({
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
               />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">E-mail da conta</label>
+              <input
+                type="email"
+                maxLength={254}
+                value={form.accountEmail}
+                onChange={(e) => setForm((f) => ({ ...f, accountEmail: e.target.value }))}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                placeholder="voce@exemplo.com"
+              />
+              <p className="mt-1 text-xs text-gray-500">E-mail da conta onde este projeto foi criado (opcional)</p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">{isHttp ? "URL do site" : "URL do Supabase"}</label>
