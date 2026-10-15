@@ -4,7 +4,9 @@ import { sweepDueProjects } from "@/lib/sweep";
 import { cleanupHistory } from "@/lib/cleanup";
 
 // Rotina periódica: chamada pelo Vercel Cron (GET, diário no Hobby) e, opcionalmente,
-// por um agendador externo (GitHub Actions / cron-job.org) com o mesmo CRON_SECRET.
+// por um agendador externo com o mesmo CRON_SECRET: Supabase pg_cron + pg_net
+// (principal, D-008, sql/supabase-despertador.sql — usa POST), GitHub Actions ou cron-job.org.
+// GET e POST são aceitos; o corpo é ignorado. Auth: header "Authorization: Bearer <CRON_SECRET>".
 export const maxDuration = 60;
 const SWEEP_BUDGET_MS = 45_000; // deixa folga para limpeza e resposta
 

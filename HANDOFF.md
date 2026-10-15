@@ -1,6 +1,18 @@
 # HANDOFF.md
 
-_Última sessão: 14/10/2026 — Grok Bot (branch `feat/agendador-proprio`)._
+_Última sessão: 14/10/2026 — Grok Bot (branch `feat/despertador-supabase`)._
+
+## Sessão 6 — despertador via Supabase (branch `feat/despertador-supabase`)
+Feito:
+- `sql/supabase-despertador.sql` (idempotente): extensões pg_cron/pg_net, secrets no Vault (`monitor_cron_url`, `monitor_cron_secret`, placeholders), job `monitor-uptime-tick` `* * * * *` com `net.http_post` (timeout 60 s), consultas de verificação e desligamento.
+- `docs/despertador-supabase.md`: passo a passo, verificação, desligar, limitações (pausa Free, 60 s Vercel, coexistência).
+- Rota do cron já aceitava GET/POST com `Bearer CRON_SECRET`; só comentário atualizado.
+
+Próximo passo (usuário):
+1. Vercel: `CRON_SECRET`, `SCHEDULER_TICK_MINUTES=1`, `SCHEDULER_TICK_OFFSET_MINUTES=0` → Redeploy.
+2. Supabase despertador: rodar o SQL com URL e segredo reais no SQL Editor.
+3. Verificar `net._http_response` (200) e o painel.
+4. Cadastrar o próprio projeto despertador no monitor (evita pausa no Free).
 
 ## Sessão 5 — agendador próprio (branch `feat/agendador-proprio`, PR com base `feat/rotina-checagem`)
 Feito:

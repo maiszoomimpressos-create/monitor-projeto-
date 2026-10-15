@@ -1,6 +1,6 @@
 # STATUS.md
 
-_Última atualização: 14/10/2026 ~18:20 BRT (branch `feat/agendador-proprio`, sobre `feat/rotina-checagem`)._
+_Última atualização: 14/10/2026 ~22:30 BRT (branch `feat/despertador-supabase`)._
 Relatório completo da apuração: `C:\Users\Free\Desktop\CONTINUIDADE-SUPABASE\apuracao-grok.md` (fora do repositório).
 
 Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠 parcial · ❌ ausente/não confirmado
@@ -13,6 +13,7 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 | "Possível pausa" após 3 falhas de conexão consecutivas | 🟡 | `src/lib/runCheck.ts` |
 | Agendamento: Vercel Cron diário `0 9 * * *` (Hobby) → `/api/cron/check-projects` (`Bearer CRON_SECRET`, comparação em tempo constante); agendador externo opcional (GitHub Actions a cada 15 min, desligado por padrão) | 🟡 testes unitários da lógica; sem execução real | `vercel.ts`, `docs/agendador-externo.github-actions.yml` (copiar para `.github/workflows/`), `src/app/api/cron/check-projects/route.ts` |
 | Intervalo por projeto escolhido pelo cliente (D-001), painel só oferece intervalos ≥ período do agendador ativo (`SCHEDULER_TICK_MINUTES`); API recusa incompatíveis; "próxima execução" = próximo disparo real do agendador | 🟡 testado (unitário) | `src/lib/schedule.ts`, `src/app/admin/novo/**`, `ProjectDetail.tsx` |
+| Despertador via Supabase pg_cron + pg_net (POST a cada 1 min com `Bearer CRON_SECRET`) — opção principal (D-008) | 🟠 SQL e guia prontos; **não executado** em nenhum projeto Supabase | `sql/supabase-despertador.sql`, `docs/despertador-supabase.md` |
 | Agendador próprio (worker Node, ciclo a cada 60 s, sem sobreposição, shutdown gracioso, health opcional em `PORT`), reaproveitando `sweep.ts` | 🟡 testes do laço com mocks; iniciado localmente sem banco (falha graciosa); sem deploy | `src/worker/**`, `Dockerfile.worker`, `railway.json`, `fly.toml`, `ecosystem.config.cjs`, `docs/agendador-proprio.md` |
 | Lock agendado compara `lastRunAt` lido (worker + cron da Vercel não checam 2x o mesmo vencimento) | 🟡 | `src/lib/runCheck.ts` |
 | `isProjectDue` com tolerância de meio período do agendador | ✅ testes unitários | `src/lib/schedule.ts`, `src/lib/schedule.test.ts` |
@@ -30,6 +31,7 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 | Testes automatizados | 🟠 `schedule.test.ts` + `worker/loop.test.ts` (13 testes, `npm test`) | `src/lib/schedule.test.ts`, `src/worker/loop.test.ts` |
 
 ## Validações com evidência
+- Branch `feat/despertador-supabase` (14/10/2026, box, variáveis fictícias): lint exit 0; tsc exit 0; `npm test` 13/13; build exit 0. O SQL do despertador **não foi executado** (sem acesso a banco).
 - Branch `feat/agendador-proprio` (14/10/2026, box, variáveis fictícias, sem banco): lint exit 0; tsc exit 0; `npm test` 13/13; `npm run build` exit 0; `npm run worker` iniciou, registrou falha de conexão por ciclo sem cair, respondeu ao health em `PORT` e encerrou com SIGTERM/SIGINT; sem `DATABASE_URL` sai com código 1 e mensagem clara. Docker não disponível no box: `Dockerfile.worker` **não foi construído**.
 - Branch `feat/rotina-checagem` (14/10/2026, box, variáveis fictícias, sem banco): `npm run lint` → exit 0; `npx tsc --noEmit --incremental false` → exit 0; `npm test` → 8 passaram, 0 falharam; `npm run build` → exit 0.
 - Branch `feat/telas-auth` (14/10/2026, no box do Grok Bot, `npm ci` + variáveis fictícias, sem banco): `npm run lint` → exit 0; `npx tsc --noEmit --incremental false` → exit 0 (após o build gerar os tipos de rota; antes do build falha com `LayoutProps` não encontrado, pois esses tipos são gerados pelo Next); `npm run build` → exit 0; `prisma validate` → válido.
@@ -39,6 +41,8 @@ Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠
 - **Sem testes automatizados.** Os testes descritos no README foram manuais/temporários e não estão no repositório.
 
 ## Agendamento — situação
+- D-008: principal = despertador Supabase (pg_cron a cada 1 min → Vercel). Reserva = cron diário da Vercel. Alternativa = worker próprio (D-007). Pendente: executar o SQL, configurar variáveis na Vercel e redeploy.
+- Risco: projeto despertador no plano Free pode ser pausado (pg_cron não é garantido como "atividade"); mitigação em `docs/despertador-supabase.md`.
 0. Decisão D-007: agendador próprio (worker) passa a ser o principal; cron diário da Vercel vira reserva opcional. Worker ainda **não implantado**.
 1. ✅ Plano Vercel **Hobby confirmado** (comentário do `vercel[bot]` no PR #1: cron limitado a 1x/dia). Cron mantido em `0 9 * * *` (06:00 BRT, pode disparar até 06:59).
 2. ✅ Frequência efetiva padrão: 1x/dia → intervalos oferecidos: 1, 2, 3 e 7 dias.

@@ -41,3 +41,8 @@ Cadastro e histórico ficam em um Postgres próprio (previsto Neon via Vercel), 
 **Decisão:** as checagens passam a ser disparadas por um processo Node de longa duração (`src/worker`), hospedado no Railway/Fly.io ou em máquina própria (pm2). Ele consulta o banco de controle a cada `WORKER_TICK_SECONDS` (padrão 60 s) e reaproveita a lógica de `src/lib` (sweep, lock, isolamento, crypto, SSRF). A Vercel fica só com as telas/API.
 **Detalhes:** com o worker, `SCHEDULER_TICK_MINUTES=1` (worker e Vercel); intervalo mínimo oferecido ao cliente: **5 min** (evita carga desnecessária nos projetos monitorados e respeita a duração das checagens, até ~20 s). O cron diário da Vercel pode continuar como reserva: o lock compara `lastRunAt`, impedindo checagem dupla.
 **Impacto:** novo serviço a hospedar e manter (custo/plano do Railway ou máquina ligada); sem mudança de banco.
+
+## D-008 — Despertador via Supabase pg_cron como opção principal (14/10/2026, decisão do usuário)
+**Decisão:** um projeto Supabase chama a cada 1 min `POST /api/cron/check-projects` na Vercel via pg_cron + pg_net, com `Authorization: Bearer CRON_SECRET` lido do Supabase Vault (`sql/supabase-despertador.sql`). Vercel com `SCHEDULER_TICK_MINUTES=1` e `SCHEDULER_TICK_OFFSET_MINUTES=0` (intervalos a partir de 5 min).
+**Reserva:** cron diário da Vercel continua ativo. **Alternativa:** worker próprio (D-007), não obrigatório.
+**Riscos:** no plano Free o projeto despertador pode ser pausado após 7 dias sem atividade de usuário (pg_cron não é documentado como atividade) → cadastrar o próprio despertador no monitor; limite de 60 s por chamada na Vercel (rotina usa 45 s; sobra vai para o minuto seguinte). Lock impede checagem dupla entre agendadores.
