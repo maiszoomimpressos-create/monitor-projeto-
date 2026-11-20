@@ -84,6 +84,24 @@ model Project {
   @@map("projects")
 }
 
+// Heartbeat do agendador: uma linha por chamada de /api/cron/check-projects,
+// independente de ter algum projeto vencido (prova que o despertador está vivo).
+// Retenção: só as 250 mais recentes (ver src/lib/cronLog.ts).
+model CronRun {
+  id           String   @id @default(cuid())
+  ranAt        DateTime @default(now())
+  ok           Boolean
+  checked      Int
+  skipped      Int
+  failed       Int
+  deferred     Int
+  total        Int
+  errorMessage String?
+
+  @@index([ranAt])
+  @@map("cron_runs")
+}
+
 model Execution {
   id              String      @id @default(cuid())
   projectId       String
