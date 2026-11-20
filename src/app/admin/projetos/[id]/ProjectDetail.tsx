@@ -179,7 +179,7 @@ export default function ProjectDetail({
               <>
                 <div>
                   <dt className="text-gray-500">Tabela de verificação</dt>
-                  <dd>{project.healthcheckTable}</dd>
+                  <dd>{project.healthcheckTable || "Nenhuma (checagem padrão, sem tabela)"}</dd>
                 </div>
                 <div>
                   <dt className="text-gray-500">Chave</dt>
@@ -289,12 +289,15 @@ export default function ProjectDetail({
             ) : (
               <>
             <div>
-              <label className="mb-1 block text-sm font-medium">Tabela de verificação</label>
+              <label className="mb-1 block text-sm font-medium">Tabela de verificação (opcional)</label>
               <input
                 value={form.healthcheckTable}
                 onChange={(e) => setForm((f) => ({ ...f, healthcheckTable: e.target.value }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Em branco: checagem padrão (/auth/v1/health), sem precisar de nenhuma tabela.
+              </p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">

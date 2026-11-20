@@ -25,8 +25,6 @@ export default function NewProjectForm({
     httpMethod: "GET" as "GET" | "HEAD",
     expectedStatus: "",
     apiKey: "",
-    dbConnectionString: "",
-    healthcheckTable: "_uptime_healthcheck",
     intervalMinutes: intervals[0]?.minutes ?? 1440,
     enabled: true,
   });
@@ -59,8 +57,6 @@ export default function NewProjectForm({
                 accountEmail: form.accountEmail,
                 supabaseUrl: `https://${extractSupabaseProjectRef(form.projectRef)}.supabase.co`,
                 apiKey: form.apiKey,
-                dbConnectionString: form.dbConnectionString.trim() || undefined,
-                healthcheckTable: form.healthcheckTable,
                 intervalMinutes: form.intervalMinutes,
                 enabled: form.enabled,
               },
@@ -209,36 +205,6 @@ export default function NewProjectForm({
             <p className="mt-1 text-xs text-gray-500">
               Use a chave <strong>anon</strong> (pública) do projeto — não use a service_role key.
               Ela é criptografada antes de ser salva e nunca é exibida novamente.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium">Tabela de verificação</label>
-            <input
-              required
-              value={form.healthcheckTable}
-              onChange={(e) => setForm((f) => ({ ...f, healthcheckTable: e.target.value }))}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Precisa existir no projeto com RLS liberando apenas SELECT para a chave anon.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium">
-              Connection string do Postgres (opcional — cria a tabela de verificação sozinho)
-            </label>
-            <SecretInput
-              value={form.dbConnectionString}
-              onChange={(e) => setForm((f) => ({ ...f, dbConnectionString: e.target.value }))}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              placeholder="postgresql://postgres:[senha]@...supabase.com:5432/postgres"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Em Project Settings &gt; Database &gt; Connection string (URI), com a senha preenchida. Usada só nesta
-              hora, pra criar a tabela — <strong>nunca é salva</strong>. Se deixar em branco, você precisa criar a
-              tabela manualmente antes (<code>sql/supabase_healthcheck_migration.sql</code> no SQL Editor).
             </p>
           </div>
           </>

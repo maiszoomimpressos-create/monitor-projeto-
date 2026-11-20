@@ -15,10 +15,12 @@ const projectFields = {
     .refine((v) => v === "" || z.email().safeParse(v).success, "E-mail da conta inválido.")
     .transform((v) => (v === "" ? null : v))
     .nullable(),
+  // Vazio (padrão): checagem sem tabela, na raiz da API (/rest/v1/), sem precisar
+  // criar nada no Supabase. Preenchido: modo avançado, lê 1 registro dessa tabela.
   healthcheckTable: z
     .string()
     .trim()
-    .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/, "Nome de tabela inválido.")
+    .regex(/^([a-zA-Z_][a-zA-Z0-9_]*)?$/, "Nome de tabela inválido.")
     .max(63),
   intervalMinutes: z
     .number()
@@ -39,7 +41,7 @@ export const projectInputSchema = z
     httpMethod: projectFields.httpMethod.default("GET"),
     expectedStatus: projectFields.expectedStatus.optional(),
     accountEmail: projectFields.accountEmail.optional(),
-    healthcheckTable: projectFields.healthcheckTable.default("_uptime_healthcheck"),
+    healthcheckTable: projectFields.healthcheckTable.default(""),
     intervalMinutes: projectFields.intervalMinutes.default(1440),
     enabled: projectFields.enabled.default(true),
   })
