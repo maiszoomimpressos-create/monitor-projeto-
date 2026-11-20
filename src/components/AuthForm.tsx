@@ -7,6 +7,14 @@ import Link from "next/link";
 const inputClass =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900";
 
+const PASSWORD_RULES: { label: string; test: (v: string) => boolean }[] = [
+  { label: "Mínimo de 8 caracteres", test: (v) => v.length >= 8 },
+  { label: "1 letra maiúscula", test: (v) => /[A-Z]/.test(v) },
+  { label: "1 letra minúscula", test: (v) => /[a-z]/.test(v) },
+  { label: "1 número", test: (v) => /\d/.test(v) },
+  { label: "1 caractere especial", test: (v) => /[^A-Za-z0-9]/.test(v) },
+];
+
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const isRegister = mode === "register";
@@ -103,9 +111,19 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
             </button>
           </div>
           {isRegister && (
-            <span className="mt-1 block text-xs text-gray-500">
-              Mínimo de 8 caracteres, com maiúscula, minúscula, número e caractere especial.
-            </span>
+            <ul className="mt-2 grid grid-cols-1 gap-0.5 text-xs">
+              {PASSWORD_RULES.map(({ label, test }) => {
+                const met = test(form.password);
+                return (
+                  <li
+                    key={label}
+                    className={met ? "text-green-600 dark:text-green-500" : "text-gray-500"}
+                  >
+                    {met ? "✓" : "○"} {label}
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </label>
 
