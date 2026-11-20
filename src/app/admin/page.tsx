@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/requireAdmin";
@@ -40,12 +39,15 @@ export default async function AdminPage() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-lg font-semibold">Seus projetos</h1>
-            <Link
+            {/* <a> normal (não <Link>) de propósito: garante recarregamento completo da
+                página, sem o Next reaproveitar a instância anterior do formulário com
+                dados do último projeto cadastrado. */}
+            <a
               href="/admin/novo"
               className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
             >
               + Novo projeto
-            </Link>
+            </a>
           </div>
           <ProjectList projects={projects.map(serializeProject)} lastExecutions={lastExecutions} />
         </div>
