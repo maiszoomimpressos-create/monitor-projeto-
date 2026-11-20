@@ -1,7 +1,7 @@
 # STATUS.md
 
-_Última atualização: 19–20/11/2026 (PRs #8 e #9 mesclados em `main`)._
-**Banco de controle (Neon): CONFIRMADO ativo** — `prisma migrate status` conectou e mostrou todas as migrations aplicadas, inclusive `cron_runs` (heartbeat do agendador, aplicada em 19/11/2026). **Deploy real (`monitor-projeto` na Vercel, time `neomars-projects-53c01d55`): variáveis de ambiente configuradas pelo usuário via painel** (MCP da Vercel desta sessão não enxerga esse projeto — investigar permissão em outra sessão). Senha forte + botão de olho no cadastro: implementados e mesclados.
+_Última atualização: 20/11/2026 — **despertador Supabase ativo e confirmado em produção**._
+**Banco de controle (Neon): CONFIRMADO ativo** — todas as migrations aplicadas, inclusive `cron_runs`. **Deploy real: `monitor-projeto-nu.vercel.app`** (domínio verificado; `monitor-projeto.vercel.app` NÃO é o domínio certo). Variáveis de ambiente configuradas via Vercel CLI (token pessoal) e confirmadas com `vercel env ls`. **Despertador D-008: ✅ CONFIRMADO funcionando** — `pg_cron` no Supabase (`jbucmmenrepvupmihaaj`) chama `/api/cron/check-projects` a cada minuto; `net._http_response` já registrou `status_code 200`. Projeto despertador cadastrado no próprio monitor (mitigação de pausa do Free). Senha forte + botão de olho no cadastro: implementados e mesclados.
 Relatório completo da apuração: `C:\Users\Free\Desktop\CONTINUIDADE-SUPABASE\apuracao-grok.md` (fora do repositório).
 
 Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠 parcial · ❌ ausente/não confirmado
@@ -17,7 +17,7 @@ Keep-alive de sistemas em planos gratuitos com leitura leve (D-009). Tipos: Supa
 | "Possível pausa" após 3 falhas de conexão consecutivas | 🟡 | `src/lib/runCheck.ts` |
 | Agendamento: Vercel Cron diário `0 9 * * *` (Hobby) → `/api/cron/check-projects` (`Bearer CRON_SECRET`, comparação em tempo constante); agendador externo opcional (GitHub Actions a cada 15 min, desligado por padrão) | 🟡 testes unitários da lógica; sem execução real | `vercel.ts`, `docs/agendador-externo.github-actions.yml` (copiar para `.github/workflows/`), `src/app/api/cron/check-projects/route.ts` |
 | Intervalo por projeto escolhido pelo cliente (D-001), painel só oferece intervalos ≥ período do agendador ativo (`SCHEDULER_TICK_MINUTES`); API recusa incompatíveis; "próxima execução" = próximo disparo real do agendador | 🟡 testado (unitário) | `src/lib/schedule.ts`, `src/app/admin/novo/**`, `ProjectDetail.tsx` |
-| Despertador via Supabase pg_cron + pg_net (POST a cada 1 min com `Bearer CRON_SECRET`) — opção principal (D-008) | 🟠 SQL e guia prontos; **não executado** em nenhum projeto Supabase | `sql/supabase-despertador.sql`, `docs/despertador-supabase.md` |
+| Despertador via Supabase pg_cron + pg_net (POST a cada 1 min com `Bearer CRON_SECRET`) — opção principal (D-008) | ✅ rodando em produção, confirmado (`net._http_response` com status 200) | `sql/supabase-despertador.sql`, `docs/despertador-supabase.md` |
 | Agendador próprio (worker Node, ciclo a cada 60 s, sem sobreposição, shutdown gracioso, health opcional em `PORT`), reaproveitando `sweep.ts` | 🟡 testes do laço com mocks; iniciado localmente sem banco (falha graciosa); sem deploy | `src/worker/**`, `Dockerfile.worker`, `railway.json`, `fly.toml`, `ecosystem.config.cjs`, `docs/agendador-proprio.md` |
 | Projeto tipo **Site/URL** (HTTP GET/HEAD, timeout 30 s, 1 retry, ≤3 redirects, ≤64 KB, status esperado opcional, SSRF com DNS na conexão) | 🟡 testes unitários (URL/SSRF/classificação); **requisição real não testada** (DNS do box devolve 198.18.x, bloqueado pelo próprio SSRF) | `src/lib/httpCheck.ts`, `src/lib/ssrf.ts`, `src/lib/httpCheck.test.ts`, formulários |
 | Rotina: pool de 8 checagens com prazo final; HTTP só inicia com ≥ 32 s restantes, Supabase com ≥ 10 s | 🟡 | `src/lib/sweep.ts` |
@@ -54,7 +54,7 @@ Keep-alive de sistemas em planos gratuitos com leitura leve (D-009). Tipos: Supa
 - **Sem testes automatizados.** Os testes descritos no README foram manuais/temporários e não estão no repositório.
 
 ## Agendamento — situação
-- D-008: principal = despertador Supabase (pg_cron a cada 1 min → Vercel). Reserva = cron diário da Vercel. Alternativa = worker próprio (D-007). Pendente: executar o SQL, configurar variáveis na Vercel e redeploy.
+- D-008: principal = despertador Supabase (pg_cron a cada 1 min → Vercel). **Ativo e confirmado em produção desde 20/11/2026.** Reserva = cron diário da Vercel. Alternativa = worker próprio (D-007), não implantado.
 - Risco: projeto despertador no plano Free pode ser pausado (pg_cron não é garantido como "atividade"); mitigação em `docs/despertador-supabase.md`.
 0. Decisão D-007: agendador próprio (worker) passa a ser o principal; cron diário da Vercel vira reserva opcional. Worker ainda **não implantado**.
 1. ✅ Plano Vercel **Hobby confirmado** (comentário do `vercel[bot]` no PR #1: cron limitado a 1x/dia). Cron mantido em `0 9 * * *` (06:00 BRT, pode disparar até 06:59).

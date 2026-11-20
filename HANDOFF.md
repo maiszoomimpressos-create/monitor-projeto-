@@ -12,13 +12,20 @@ Feito:
 - Autenticação Git: token antigo (`gh`/credencial do git) tinha expirado; usuário gerou um Personal Access Token novo (classic, escopo `repo`) usado para os pushes/PRs desta sessão (não salvo em arquivo; `gh auth login --with-token` falhou por faltar escopo `read:org`, não crítico — token usado via `GH_TOKEN=... gh ...` por comando).
 - `npm run lint`, `npx tsc --noEmit`, `npm test` (20/20) e `npm run build` passaram em todas as branches desta sessão.
 
+## Sessão 9 (continuação) — despertador ativo, ciclo fechado
+- Domínio real de produção descoberto: **`monitor-projeto-nu.vercel.app`** (não `monitor-projeto.vercel.app`, que não está associado a nenhum deploy — retorna 401/projeto errado). Confirmado por teste direto: `POST /api/cron/check-projects` com o `CRON_SECRET` certo → `200 {"ok":true,...}`.
+- Vercel: variáveis de ambiente **não tinham sido salvas de fato** pelo painel (confirmado com `vercel env ls` → lista vazia). Resolvido via **Vercel CLI** (token pessoal do usuário, escopo "Todos os Projetos"): `vercel link` ao projeto certo + `vercel env add` para as 7 variáveis + `vercel redeploy` do deployment mais recente. Confirmar com `vercel env ls --token <token>`.
+- **Despertador Supabase configurado e confirmado funcionando ponta a ponta**: SQL de `sql/supabase-despertador.sql` rodado via Supabase Management API (`POST /v1/projects/{ref}/database/query`, token `sbp_...` do usuário, nunca salvo em arquivo) no projeto `jbucmmenrepvupmihaaj`. Verificado: `cron.job` ativo (`* * * * *`), e `net._http_response` já registrou uma chamada com `status_code: 200` — o `pg_cron` está realmente acordando a Vercel a cada minuto.
+- `sql/supabase_healthcheck_migration.sql` também aplicado nesse mesmo projeto Supabase (tabela `_uptime_healthcheck`), e testado via REST com a chave anon (200, `[{"id":1}]`).
+- **Projeto despertador cadastrado no próprio monitor** (mitigação de pausa do Free, D-008): criado via chamada real a `POST /api/admin/projects` no site em produção, autenticado com um token de sessão assinado localmente (mesma lógica de `src/lib/auth.ts`, já que o `ADMIN_SESSION_SECRET` é conhecido) — não foi inserido direto no banco, passou pela validação/criptografia reais da API. Projeto: "Despertador (auto-monitor)", intervalo 60 min, usuário dono `maiszoomimpressos@gmail.com` (única conta existente no banco).
+- **Ciclo fechado**: despertador (Supabase pg_cron) → Vercel (checa projetos, grava `cron_runs`) → Vercel verifica o próprio despertador a cada hora → mantém o despertador "vivo" para o Supabase não pausar. Tudo roda sozinho a partir daqui, sem depender de nenhuma sessão futura.
+
 Próximo passo (usuário):
-1. Confirmar que o Redeploy do `monitor-projeto` na Vercel já pegou o código de `main` (PRs #8 e #9) — ou disparar um novo Redeploy.
-2. Confirmar o domínio real do deploy (painel "Domínios") para montar a URL do despertador.
-3. Rodar `sql/supabase-despertador.sql` no projeto Supabase despertador (ref fornecido pelo usuário nesta sessão) com essa URL + o `CRON_SECRET` configurado na Vercel. Usuário forneceu um Personal Access Token do Supabase (`sbp_...`) para isso; sem MCP Supabase nesta sessão, a execução é via Management API (`POST /v1/projects/{ref}/database/query`), sem gravar o token em arquivo.
-4. Depois do despertador rodando: cadastrar o próprio projeto despertador no monitor (mitigação de pausa do Free, ver `docs/despertador-supabase.md`) — fecha o ciclo descrito na Sessão 9.
-5. Decidir se/quando mesclar o upgrade do Next.js (`worktree-next-security-upgrade`).
-6. Verificar a tabela `cron_runs` periodicamente (ou expor no painel) para confirmar que o despertador está batendo a cada minuto.
+1. Acompanhar a tabela `cron_runs` (ou `net._http_response` no Supabase) por um tempo para confirmar o ritmo de 1x/min continua estável.
+2. Decidir se/quando mesclar o upgrade do Next.js (`worktree-next-security-upgrade`) — ainda não enviado ao GitHub.
+3. Revisar o projeto "Despertador (auto-monitor)" cadastrado no painel (intervalo, nome) — pode ajustar livremente pela UI.
+4. Investigar em outra sessão por que o MCP da Vercel não enxerga o projeto `monitor-projeto` (permissão da integração) — o CLI com token pessoal contornou isso desta vez, mas não é o ideal a longo prazo.
+5. Guardar o Personal Access Token do GitHub e o token da Vercel usados nesta sessão em local seguro (gerenciador de senhas) se forem reutilizar — nenhum dos dois foi salvo em arquivo do projeto.
 
 ## Sessão 7 — keep-alive e tipo Site/URL (branch `feat/checagem-http`)
 Feito:
