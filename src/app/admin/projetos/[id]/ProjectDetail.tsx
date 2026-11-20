@@ -216,6 +216,7 @@ export default function ProjectDetail({
             <div>
               <label className="mb-1 block text-sm font-medium">Nome</label>
               <input
+                autoComplete="off"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
@@ -226,6 +227,7 @@ export default function ProjectDetail({
               <input
                 type="email"
                 maxLength={254}
+                autoComplete="off"
                 value={form.accountEmail}
                 onChange={(e) => setForm((f) => ({ ...f, accountEmail: e.target.value }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
@@ -237,6 +239,7 @@ export default function ProjectDetail({
               <div>
                 <label className="mb-1 block text-sm font-medium">URL do site</label>
                 <input
+                  autoComplete="off"
                   value={form.supabaseUrl}
                   onChange={(e) => setForm((f) => ({ ...f, supabaseUrl: e.target.value }))}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
@@ -246,6 +249,7 @@ export default function ProjectDetail({
               <div>
                 <label className="mb-1 block text-sm font-medium">ID do projeto Supabase</label>
                 <input
+                  autoComplete="off"
                   value={form.supabaseUrl.replace(/^https?:\/\//, "").replace(/\.supabase\.(co|in|net).*/, "")}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, supabaseUrl: `https://${extractSupabaseProjectRef(e.target.value)}.supabase.co` }))
