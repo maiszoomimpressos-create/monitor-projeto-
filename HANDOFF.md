@@ -1,11 +1,22 @@
 # HANDOFF.md
 
-_Última sessão: 15/10/2026 — Grok Bot (branch `feat/email-conta`)._
+_Última sessão: 19/11/2026 — Claude (branch `feat/senha-forte-visibilidade`, base `origin/main` pós PR #7)._
 
-## Sessão 8 — e-mail da conta (branch `feat/email-conta`)
-- Coluna opcional `Project.accountEmail` (só referência/organização, nunca usada para acesso), validada com Zod (e-mail, ≤ 254, vazio = null), nos formulários, detalhe e cartão da lista.
-- **Migration `20261015200000_project_account_email` NÃO aplicada — aplicar no Neon antes do deploy** (`npm run db:migrate:deploy`, com autorização).
-- Antes desta sessão: PR #6 (botão de olho `SecretInput`) mesclado.
+## Sessão 9 — ativação do sistema (banco, deploy, senha forte)
+Feito:
+- Confirmado por conexão real: banco de controle é **Neon**, não Supabase. `prisma migrate status` → 4 migrations encontradas, **todas aplicadas, schema atualizado** (inclui `project_account_email`, que a Sessão 8 tinha marcado como pendente — já foi aplicada depois). Projeto Neon `wandering-night-19954133` (`us-east-1`, AWS).
+- Descoberto: o projeto Vercel real é **`monitor-projeto`** (time `neomars-projects-53c01d55`, `vercel.com/neomars-projects-53c01d55/monitor-projeto`), não `supabase-uptime-monitor` (nome antigo em `.vercel/project.json`, não existe mais). Deploy de produção "Pronto" (branch `principal`/main), mas **sem nenhuma variável de ambiente configurada** — por isso cadastro/login falhavam ("Não foi possível continuar"). Usuário adicionando as variáveis manualmente pelo painel (o MCP da Vercel desta sessão não enxerga esse projeto — 403/404 mesmo com nome e teamId corretos; investigar permissão da integração em outra sessão).
+- `src/components/AuthForm.tsx` + `src/lib/validation.ts`: botão de olho (mostrar/ocultar senha) e exigência de senha forte no cadastro (maiúscula, minúscula, número, caractere especial), front e back.
+- Next.js 16.4.0 → 16.4.6 (vulnerabilidade de segurança) em worktree separado (`.claude/worktrees/next-security-upgrade`, branch `worktree-next-security-upgrade`, **não mesclado**); `experimental.agentUpgrade = "security"` adicionado ao `next.config.ts` nessa branch.
+- `npm run lint`, `npx tsc --noEmit`, `npm test` (20/20) e `npm run build` (com o aviso de segurança do Next.js, esperado nesta branch) passaram em `feat/senha-forte-visibilidade`, rebaseada sobre `origin/main` (PRs #5/#6/#7 já incluídos: tipo de projeto HTTP, botão de olho na chave anon, e-mail da conta).
+
+Próximo passo (usuário):
+1. Terminar de colar as variáveis de ambiente no painel da Vercel (`monitor-projeto` → Variáveis Ambiente) e fazer Redeploy: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `ADMIN_SESSION_SECRET`, `ENCRYPTION_KEY`, `CRON_SECRET` (valor novo gerado nesta sessão, não repetido aqui), `SCHEDULER_TICK_MINUTES=1`, `SCHEDULER_TICK_OFFSET_MINUTES=0`.
+2. Confirmar o domínio real do deploy (painel "Domínios") para montar a URL do despertador.
+3. Rodar `sql/supabase-despertador.sql` no projeto Supabase despertador (ref fornecido pelo usuário nesta sessão) com essa URL + o `CRON_SECRET` acima — pendente até o passo 1. Usuário forneceu um Personal Access Token do Supabase (`sbp_...`) para isso; sem MCP Supabase nesta sessão, a execução será via Management API (`POST /v1/projects/{ref}/database/query`), sem gravar o token em arquivo.
+4. Abrir PR de `feat/senha-forte-visibilidade` para `main` (pendente autorização explícita — perguntar antes de dar push).
+5. Decidir se/quando mesclar o upgrade do Next.js (`worktree-next-security-upgrade`).
+6. Depois do despertador rodando: cadastrar o próprio projeto despertador no monitor (mitigação de pausa do Free, ver `docs/despertador-supabase.md`).
 
 ## Sessão 7 — keep-alive e tipo Site/URL (branch `feat/checagem-http`)
 Feito:
