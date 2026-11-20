@@ -6,6 +6,7 @@ import { encryptSecret, lastFour } from "@/lib/crypto";
 import { assertHostResolvesToPublicIp, assertWellFormedHttpUrl, assertWellFormedSupabaseUrl, UnsafeUrlError } from "@/lib/ssrf";
 import { serializeProject } from "@/lib/serialize";
 import { formatInterval, getScheduleConfig, isIntervalAllowed } from "@/lib/schedule";
+import { HealthcheckMigrationError, runHealthcheckMigration } from "@/lib/healthcheckMigration";
 
 export async function GET() {
   const session = await getSession();
@@ -46,6 +47,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     throw error;
+  }
+
+  // Connection string opcional, só pra criar a tabela de verificação sozinho.
+  // Nunca é persistida — usada aqui e descartada.
+  const dbConnectionString =
+    data.type === "SUPABASE" && typeof json === "object" && json !== null && "dbConnectionString" in json
+      ? String((json as Record<string, unknown>).dbConnectionString ?? "").trim()
+      : "";
+  if (dbConnectionString) {
+    try {
+      await runHealthcheckMigration(dbConnectionString);
+    } catch (error) {
+      if (error instanceof HealthcheckMigrationError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      throw error;
+    }
   }
 
   const project = await prisma.project.create({
