@@ -278,11 +278,12 @@ export default function ProjectDetail({
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">
-                Nova chave de API (deixe em branco para manter a atual)
+                Nova chave de API (deixe em branco para manter a atual: {project.maskedKey})
               </label>
               <SecretInput
                 value={form.apiKey}
                 onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
+                placeholder={project.maskedKey}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
               />
             </div>
