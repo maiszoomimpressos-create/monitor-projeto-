@@ -5,6 +5,7 @@ import Link from "next/link";
 import SecretInput from "@/components/SecretInput";
 import { useState } from "react";
 import type { ExecutionView, ProjectView } from "@/lib/types";
+import { extractSupabaseProjectRef } from "@/lib/supabaseRef";
 import { formatDateTime, STATUS_LABELS } from "@/lib/statusLabels";
 
 type CheckStatusKey = keyof typeof STATUS_LABELS;
@@ -232,14 +233,33 @@ export default function ProjectDetail({
               />
               <p className="mt-1 text-xs text-gray-500">E-mail da conta onde este projeto foi criado (opcional)</p>
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">{isHttp ? "URL do site" : "URL do Supabase"}</label>
-              <input
-                value={form.supabaseUrl}
-                onChange={(e) => setForm((f) => ({ ...f, supabaseUrl: e.target.value }))}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              />
-            </div>
+            {isHttp ? (
+              <div>
+                <label className="mb-1 block text-sm font-medium">URL do site</label>
+                <input
+                  value={form.supabaseUrl}
+                  onChange={(e) => setForm((f) => ({ ...f, supabaseUrl: e.target.value }))}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="mb-1 block text-sm font-medium">ID do projeto Supabase</label>
+                <input
+                  value={form.supabaseUrl.replace(/^https?:\/\//, "").replace(/\.supabase\.(co|in|net).*/, "")}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, supabaseUrl: `https://${extractSupabaseProjectRef(e.target.value)}.supabase.co` }))
+                  }
+                  onBlur={(e) =>
+                    setForm((f) => ({ ...f, supabaseUrl: `https://${extractSupabaseProjectRef(e.target.value)}.supabase.co` }))
+                  }
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Só o ID (Project Settings &gt; General no Supabase). Montamos a URL sozinhos.
+                </p>
+              </div>
+            )}
             {isHttp ? (
             <div className="flex gap-3">
               <div className="flex-1">

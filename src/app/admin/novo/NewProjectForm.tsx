@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SecretInput from "@/components/SecretInput";
+import { extractSupabaseProjectRef } from "@/lib/supabaseRef";
 
 type IntervalOption = { minutes: number; label: string };
 
@@ -20,6 +21,7 @@ export default function NewProjectForm({
     name: "",
     accountEmail: "",
     supabaseUrl: "",
+    projectRef: "",
     httpMethod: "GET" as "GET" | "HEAD",
     expectedStatus: "",
     apiKey: "",
@@ -54,7 +56,7 @@ export default function NewProjectForm({
                 type: "SUPABASE",
                 name: form.name,
                 accountEmail: form.accountEmail,
-                supabaseUrl: form.supabaseUrl,
+                supabaseUrl: `https://${extractSupabaseProjectRef(form.projectRef)}.supabase.co`,
                 apiKey: form.apiKey,
                 healthcheckTable: form.healthcheckTable,
                 intervalMinutes: form.intervalMinutes,
@@ -130,23 +132,37 @@ export default function NewProjectForm({
             <p className="mt-1 text-xs text-gray-500">E-mail da conta onde este projeto foi criado (opcional)</p>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">
-              {form.type === "HTTP" ? "URL do site" : "URL do Supabase"}
-            </label>
-            <input
-              required
-              value={form.supabaseUrl}
-              onChange={(e) => setForm((f) => ({ ...f, supabaseUrl: e.target.value }))}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              placeholder={form.type === "HTTP" ? "https://meu-app.onrender.com/" : "https://xxxxxxxx.supabase.co"}
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              {form.type === "HTTP"
-                ? "Endereço público com https. Faremos uma leitura leve (sem login, sem enviar dados)."
-                : "Deve ser um domínio *.supabase.co / *.supabase.in / *.supabase.net."}
-            </p>
-          </div>
+          {form.type === "HTTP" ? (
+            <div>
+              <label className="mb-1 block text-sm font-medium">URL do site</label>
+              <input
+                required
+                value={form.supabaseUrl}
+                onChange={(e) => setForm((f) => ({ ...f, supabaseUrl: e.target.value }))}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                placeholder="https://meu-app.onrender.com/"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Endereço público com https. Faremos uma leitura leve (sem login, sem enviar dados).
+              </p>
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1 block text-sm font-medium">ID do projeto Supabase</label>
+              <input
+                required
+                value={form.projectRef}
+                onChange={(e) => setForm((f) => ({ ...f, projectRef: e.target.value }))}
+                onBlur={(e) => setForm((f) => ({ ...f, projectRef: extractSupabaseProjectRef(e.target.value) }))}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                placeholder="xxxxxxxxxxxxxxxxxxxx"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Só o ID (fica na URL do dashboard do projeto, ou em Project Settings &gt; General). Não precisa
+                colar a URL inteira — montamos ela: https://&lt;id&gt;.supabase.co.
+              </p>
+            </div>
+          )}
 
           {form.type === "HTTP" && (
             <div className="flex gap-3">
