@@ -13,6 +13,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,16 +74,39 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
 
         <label className="text-sm font-medium">
           Senha
-          <input
-            type="password"
-            required
-            minLength={isRegister ? 8 : undefined}
-            autoComplete={isRegister ? "new-password" : "current-password"}
-            value={form.password}
-            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            className={`mt-1 ${inputClass}`}
-          />
-          {isRegister && <span className="mt-1 block text-xs text-gray-500">Mínimo de 8 caracteres.</span>}
+          <div className="relative mt-1">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={isRegister ? 8 : undefined}
+              autoComplete={isRegister ? "new-password" : "current-password"}
+              value={form.password}
+              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+              className={`${inputClass} pr-9`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              className="absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"
+            >
+              {showPassword ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.4 5.3A10.4 10.4 0 0112 5c5.5 0 9 4.5 10.5 7-.5.8-1.2 1.8-2.1 2.7M6.3 6.3C4 7.8 2.4 9.9 1.5 12c1.5 2.5 5 7 10.5 7 1.3 0 2.5-.2 3.6-.6" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z" />
+                  <circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </button>
+          </div>
+          {isRegister && (
+            <span className="mt-1 block text-xs text-gray-500">
+              Mínimo de 8 caracteres, com maiúscula, minúscula, número e caractere especial.
+            </span>
+          )}
         </label>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
