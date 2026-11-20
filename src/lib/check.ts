@@ -10,8 +10,14 @@ export interface CheckOutcome {
 const DEFAULT_TIMEOUT_MS = 8000;
 
 /**
- * Executa uma única tentativa de leitura leve contra a API REST (PostgREST) do Supabase.
- * Lê no máximo 1 registro de uma tabela de verificação dedicada. Nunca grava dados.
+ * Executa uma única tentativa de leitura leve contra a API do Supabase.
+ * Sem tabela configurada (table vazio, padrão): bate em /auth/v1/health — presente em
+ * TODO projeto Supabase, sempre, sem precisar criar nada. Responde 200 com a chave anon
+ * válida e 401 se a chave for rejeitada. (A raiz de /rest/v1/ deixou de aceitar a chave
+ * anon — só service_role — por isso não é mais usada aqui.)
+ * Com tabela configurada: lê no máximo 1 registro dela via PostgREST (modo
+ * avançado/compatibilidade com projetos configurados antes dessa mudança).
+ * Nunca grava dados.
  */
 export async function performSingleCheck(params: {
   supabaseUrl: string;
@@ -20,10 +26,15 @@ export async function performSingleCheck(params: {
   timeoutMs?: number;
 }): Promise<CheckOutcome> {
   const { supabaseUrl, apiKey, table, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
+  const usesTable = table.trim().length > 0;
 
-  const endpoint = new URL(`/rest/v1/${encodeURIComponent(table)}`, supabaseUrl);
-  endpoint.searchParams.set("select", "id");
-  endpoint.searchParams.set("limit", "1");
+  const endpoint = usesTable
+    ? new URL(`/rest/v1/${encodeURIComponent(table)}`, supabaseUrl)
+    : new URL("/auth/v1/health", supabaseUrl);
+  if (usesTable) {
+    endpoint.searchParams.set("select", "id");
+    endpoint.searchParams.set("limit", "1");
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -47,7 +58,9 @@ export async function performSingleCheck(params: {
       return {
         status: CheckStatus.SUCESSO,
         httpStatus: response.status,
-        message: "Leitura concluída com sucesso na tabela de verificação.",
+        message: usesTable
+          ? "Leitura concluída com sucesso na tabela de verificação."
+          : "Projeto respondeu com sucesso.",
         durationMs,
       };
     }
@@ -66,8 +79,9 @@ export async function performSingleCheck(params: {
       return {
         status: CheckStatus.FALHA_CONFIGURACAO,
         httpStatus: response.status,
-        message:
-          "Tabela de verificação não encontrada (404). Confirme se a migration foi aplicada e se o nome da tabela está correto.",
+        message: usesTable
+          ? "Tabela de verificação não encontrada (404). Confirme se a migration foi aplicada e se o nome da tabela está correto."
+          : "Projeto respondeu 404. Confirme se o ID do projeto está correto.",
         durationMs,
       };
     }
