@@ -1,22 +1,35 @@
 "use client";
 
-import { useState, type InputHTMLAttributes } from "react";
+import { useState, type CSSProperties, type InputHTMLAttributes } from "react";
+
+// -webkit-text-security não é padrão; typada manualmente pois não existe em CSSProperties.
+type MaskedStyle = CSSProperties & { WebkitTextSecurity?: string; textSecurity?: string };
 
 // Campo de segredo com botão de olho (mostrar/esconder o que o usuário digita).
 // Nunca recebe o segredo salvo: serve só para o valor digitado no navegador.
+//
+// IMPORTANTE: usa type="text" sempre (nunca "password"). Navegadores ignoram
+// autocomplete="off" em campos type="password" e preenchem sozinhos com a
+// senha de login salva do usuário, sobrescrevendo a chave de API em branco
+// sem o usuário perceber. O mascaramento visual (quando !visible) é feito só
+// com CSS (-webkit-text-security), sem acionar o gerenciador de senhas.
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type">;
 
-export default function SecretInput({ className = "", ...props }: Props) {
+export default function SecretInput({ className = "", style, ...props }: Props) {
   const [visible, setVisible] = useState(false);
 
   return (
     <div className="relative">
       <input
         {...props}
-        type={visible ? "text" : "password"}
+        type="text"
         autoComplete="off"
         spellCheck={false}
         autoCapitalize="off"
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-bwignore="true"
+        style={visible ? style : ({ ...style, WebkitTextSecurity: "disc", textSecurity: "disc" } as MaskedStyle)}
         className={`${className} pr-10`}
       />
       <button
