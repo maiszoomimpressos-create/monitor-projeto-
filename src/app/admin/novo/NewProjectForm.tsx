@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SecretInput from "@/components/SecretInput";
 import { extractSupabaseProjectRef } from "@/lib/supabaseRef";
@@ -15,7 +14,6 @@ export default function NewProjectForm({
   intervals: IntervalOption[];
   schedulerNote: string;
 }) {
-  const router = useRouter();
   const [form, setForm] = useState({
     type: "SUPABASE" as "SUPABASE" | "HTTP",
     name: "",
@@ -67,8 +65,11 @@ export default function NewProjectForm({
         setError(data.error ?? "Não foi possível salvar o projeto.");
         return;
       }
-      router.push("/admin");
-      router.refresh();
+      // Recarregamento completo de propósito: evita o Next reaproveitar a instância
+      // do formulário (com os dados já digitados) numa próxima visita a esta página.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = "/admin";
+      return;
     } finally {
       setLoading(false);
     }
