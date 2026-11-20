@@ -1,7 +1,7 @@
 # STATUS.md
 
-_Última atualização: 19/11/2026 (branch `feat/senha-forte-visibilidade`)._
-**Banco de controle (Neon): CONFIRMADO ativo** — `prisma migrate status` conectou e mostrou 4/4 migrations aplicadas. **Deploy real (`monitor-projeto` na Vercel, time `neomars-projects-53c01d55`): sem variáveis de ambiente configuradas até o momento desta atualização** — cadastro/login falhavam por isso; em andamento pelo usuário no painel.
+_Última atualização: 19–20/11/2026 (PRs #8 e #9 mesclados em `main`)._
+**Banco de controle (Neon): CONFIRMADO ativo** — `prisma migrate status` conectou e mostrou todas as migrations aplicadas, inclusive `cron_runs` (heartbeat do agendador, aplicada em 19/11/2026). **Deploy real (`monitor-projeto` na Vercel, time `neomars-projects-53c01d55`): variáveis de ambiente configuradas pelo usuário via painel** (MCP da Vercel desta sessão não enxerga esse projeto — investigar permissão em outra sessão). Senha forte + botão de olho no cadastro: implementados e mesclados.
 Relatório completo da apuração: `C:\Users\Free\Desktop\CONTINUIDADE-SUPABASE\apuracao-grok.md` (fora do repositório).
 
 Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠 parcial · ❌ ausente/não confirmado

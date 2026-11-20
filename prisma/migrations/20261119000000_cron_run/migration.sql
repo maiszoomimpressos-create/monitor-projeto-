@@ -1,8 +1,7 @@
 -- Heartbeat do agendador: uma linha por chamada de /api/cron/check-projects,
 -- independente de ter algum projeto vencido. Retenção: 250 mais recentes
 -- (aplicada em src/lib/cronLog.ts, não neste SQL).
--- NÃO aplicada no banco de controle de produção (Neon) ainda — aplicar com
--- autorização explícita do usuário (npm run db:migrate:deploy).
+-- APLICADA no banco de controle de produção (Neon) em 19/11/2026.
 
 CREATE TABLE "cron_runs" (
     "id" TEXT NOT NULL,
