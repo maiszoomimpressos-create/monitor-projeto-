@@ -110,6 +110,7 @@ export default function NewProjectForm({
             <label className="mb-1 block text-sm font-medium">Nome do projeto</label>
             <input
               required
+              autoComplete="off"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
@@ -122,6 +123,7 @@ export default function NewProjectForm({
             <input
               type="email"
               maxLength={254}
+              autoComplete="off"
               value={form.accountEmail}
               onChange={(e) => setForm((f) => ({ ...f, accountEmail: e.target.value }))}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
@@ -135,6 +137,7 @@ export default function NewProjectForm({
               <label className="mb-1 block text-sm font-medium">URL do site</label>
               <input
                 required
+                autoComplete="off"
                 value={form.supabaseUrl}
                 onChange={(e) => setForm((f) => ({ ...f, supabaseUrl: e.target.value }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
@@ -149,6 +152,7 @@ export default function NewProjectForm({
               <label className="mb-1 block text-sm font-medium">ID do projeto Supabase</label>
               <input
                 required
+                autoComplete="off"
                 value={form.projectRef}
                 onChange={(e) => setForm((f) => ({ ...f, projectRef: e.target.value }))}
                 onBlur={(e) => setForm((f) => ({ ...f, projectRef: extractSupabaseProjectRef(e.target.value) }))}
