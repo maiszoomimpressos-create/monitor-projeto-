@@ -58,13 +58,17 @@ export const projectUpdateSchema = z.object(projectFields).partial().extend({
 
 export type ProjectInput = z.infer<typeof projectInputSchema>;
 
+const PASSWORD_COMPLEXITY_MESSAGE =
+  "A senha deve ter 1 letra maiúscula, 1 minúscula, 1 número e 1 caractere especial.";
+
 export const registerSchema = z.object({
   name: z.string().trim().min(2, "Informe seu nome.").max(80, "Nome muito longo."),
   email: z.string().trim().toLowerCase().pipe(z.email("E-mail inválido.")).pipe(z.string().max(254)),
   password: z
     .string()
     .min(8, "A senha deve ter pelo menos 8 caracteres.")
-    .max(200, "Senha muito longa."),
+    .max(200, "Senha muito longa.")
+    .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).*/, PASSWORD_COMPLEXITY_MESSAGE),
 });
 
 export const loginSchema = z.object({

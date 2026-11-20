@@ -1,6 +1,7 @@
 # STATUS.md
 
-_Última atualização: 15/10/2026 ~19:45 BRT (branch `feat/email-conta`)._
+_Última atualização: 19/11/2026 (branch `feat/senha-forte-visibilidade`)._
+**Banco de controle (Neon): CONFIRMADO ativo** — `prisma migrate status` conectou e mostrou 4/4 migrations aplicadas. **Deploy real (`monitor-projeto` na Vercel, time `neomars-projects-53c01d55`): sem variáveis de ambiente configuradas até o momento desta atualização** — cadastro/login falhavam por isso; em andamento pelo usuário no painel.
 Relatório completo da apuração: `C:\Users\Free\Desktop\CONTINUIDADE-SUPABASE\apuracao-grok.md` (fora do repositório).
 
 Legenda: ✅ implementado e validado · 🟡 implementado, não validado · 🟠 parcial · ❌ ausente/não confirmado
